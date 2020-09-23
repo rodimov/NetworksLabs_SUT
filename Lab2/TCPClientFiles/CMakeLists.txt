@@ -17,7 +17,7 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS /entry:
 include(../../cmake/functions.cmake)
 include(../../cmake/config.cmake)
 
-set(CLASSES_WITH_UI mainwindow portdialog)
+set(CLASSES_WITH_UI mainwindow portdialog downloaddialog)
 set(CLASSES_WITHOUT_UI )
 set(CPP_ONLY main)
 set(HEADER_ONLY )

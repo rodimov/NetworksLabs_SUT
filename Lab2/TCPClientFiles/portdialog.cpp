@@ -9,6 +9,7 @@ PortDialog::PortDialog(QWidget* parent)
 
 	setFixedSize(width(), height());
 	ui->ip->setText("localhost");
+	ui->port->setFocus();
 
 	connect(ui->ok, &QPushButton::clicked, this, &PortDialog::accept);
 }
