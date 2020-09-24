@@ -60,7 +60,7 @@ void MainWindow::disconnected() {
 }
 
 void MainWindow::readyRead() {
-	QTcpSocket* clientSocket = static_cast<QTcpSocket*>(QObject::sender());
+	QTcpSocket* clientSocket = static_cast<QTcpSocket*>(sender());
 	QDataStream stream(clientSocket);
 
 	if (isWaitingList) {
