@@ -6,8 +6,9 @@
 #include <QTcpSocket>
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QTimer>
 
-const qint64 BUFFER_SIZE = 327680;
+const qint64 BUFFER_SIZE = 307704;
 
 MainWindow::MainWindow(QWidget *parent)
 	: QMainWindow(parent),
@@ -21,27 +22,29 @@ MainWindow::MainWindow(QWidget *parent)
 	ui->progressBar->setMaximum(100);
 	ui->progressBar->setValue(0);
 	ui->upload->setDefault(true);
-	clientSocket = new QTcpSocket(this);
+	serverSocket = new QTcpSocket(this);
+	timer = new QTimer(this);
 
-	connect(clientSocket, &QTcpSocket::disconnected, this, &MainWindow::disconnected);
-	connect(clientSocket, &QTcpSocket::readyRead, this, &MainWindow::readyRead);
+	connect(serverSocket, &QTcpSocket::disconnected, this, &MainWindow::disconnected);
+	connect(serverSocket, &QTcpSocket::readyRead, this, &MainWindow::readyRead);
+	connect(timer, &QTimer::timeout, this, &MainWindow::readyRead);
 	connect(ui->upload, &QPushButton::clicked, this, &MainWindow::upload);
 	connect(ui->download, &QPushButton::clicked, this, &MainWindow::download);
 }
 
 MainWindow::~MainWindow()
 {
-	if (clientSocket->isOpen()) {
-		clientSocket->disconnect();
+	if (serverSocket->isOpen()) {
+		serverSocket->disconnect();
 	}
 
 	delete ui;
 }
 
 void MainWindow::connectToServer() {
-	clientSocket->connectToHost(ip, port);
+	serverSocket->connectToHost(ip, port);
 
-	if (clientSocket->state() != QAbstractSocket::ConnectedState) {
+	if (serverSocket->state() != QAbstractSocket::ConnectedState) {
 		close();
 	}
 }
@@ -60,8 +63,7 @@ void MainWindow::disconnected() {
 }
 
 void MainWindow::readyRead() {
-	QTcpSocket* clientSocket = static_cast<QTcpSocket*>(sender());
-	QDataStream stream(clientSocket);
+	QDataStream stream(serverSocket);
 
 	if (isWaitingList) {
 		QStringList filesList;
@@ -90,12 +92,13 @@ void MainWindow::readyRead() {
 		ui->download->setDisabled(true);
 		ui->upload->setDisabled(true);
 	} else if (isDownloading) {
-		QByteArray data = clientSocket->readAll();
+		QByteArray data = serverSocket->readAll();
 
 		downloading(data);
 
 		if (fileInfo["Progress"].toLongLong() == fileInfo["Size"].toLongLong()) {
 			isDownloading = false;
+			timer->stop();
 			ui->status->setText("Waiting...");
 			ui->download->setDisabled(false);
 			ui->upload->setDisabled(false);
@@ -139,7 +142,7 @@ void MainWindow::upload() {
 	fileInfo.insert("Name", QFileInfo(*file).fileName());
 	fileInfo.insert("Size", file->size());
 
-	QDataStream stream(clientSocket);
+	QDataStream stream(serverSocket);
 	stream << fileInfo;
 }
 
@@ -147,7 +150,7 @@ void MainWindow::download() {
 	QHash<QString, QVariant> request;
 	request.insert("download", 0);
 
-	QDataStream socketStream(clientSocket);
+	QDataStream socketStream(serverSocket);
 
 	socketStream << request;
 
@@ -170,8 +173,8 @@ void MainWindow::fileTransfer() {
 		QByteArray data;
 		data = file->read(BUFFER_SIZE);
 
-		clientSocket->write(data);
-		clientSocket->waitForBytesWritten();
+		serverSocket->write(data);
+		serverSocket->waitForBytesWritten();
 
 		double uploadMS = timer.elapsed();
 
@@ -215,7 +218,7 @@ void MainWindow::downloadFiles(QStringList& filesList) {
 		return;
 	}
 
-	QDataStream socketStream(clientSocket);
+	QDataStream socketStream(serverSocket);
 
 	QHash<QString, QVariant> request;
 	request.insert("fileName", fileName);
@@ -226,6 +229,7 @@ void MainWindow::downloadFiles(QStringList& filesList) {
 }
 
 void MainWindow::downloading(QByteArray& data) {
+	timer->stop();
 	double downloadMS = timerDownload.elapsed();
 
 	QString textStatus = "Downloading file: " + fileInfo["Name"].toString();
@@ -261,6 +265,8 @@ void MainWindow::downloading(QByteArray& data) {
 		QString speedString = QString::number(speedDownloadSum / (downloadedBlocks % speedUpdateBlocks)) + " mb/s\n";
 		ui->status->setText(textStatus + " " + speedString);
 	}
+
+	timer->start(1000);
 
 	QApplication::processEvents();
 }

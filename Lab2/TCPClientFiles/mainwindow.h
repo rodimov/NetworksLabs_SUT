@@ -39,11 +39,12 @@ private:
 	Ui::MainWindow* ui;
 	int port = 0;
 	QString ip;
-	QTcpSocket* clientSocket;
+	QTcpSocket* serverSocket;
 	QFile* file = nullptr;
 	int speedUpdateBlocks = 300;
 	QHash<QString, QVariant> fileInfo;
 	QTime timerDownload;
+	QTimer* timer = nullptr;
 	int speedDownloadSum = 0;
 	int downloadedBlocks = 0;
 	bool isWaitingList = false;

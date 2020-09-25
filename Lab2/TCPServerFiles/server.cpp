@@ -7,7 +7,7 @@
 #include <QFile>
 #include <QDir>
 
-const qint64 BUFFER_SIZE = 37000680;
+const qint64 BUFFER_SIZE = 307704;
 
 Server::Server(int port, QObject* parent) : QObject(parent) {
 	this->port = port;
