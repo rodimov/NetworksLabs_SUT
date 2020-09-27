@@ -24,7 +24,7 @@ public:
 	QString getIP() { return ip; }
 
 private:
-	void fileTransfer();
+	void fileTransfer(QHash<QString, QVariant> reply);
 
 private slots:
 	void disconnected();
@@ -42,24 +42,26 @@ private:
 	QString ip;
 	QString clientFolder = "client_files_upd";
 	QString status = "status";
+	QString getFile = "get_file";
+	QString blockAddr = "block_addr";
+	QString blockTotal = "block_total";
+	QString blockSize = "block_size";
+	QString fileDownloaded = "fileDownloaded";
+	QString dataField = "data";
 	QString blockReady = "block_ready";
 	QString lastBlock = "last_block";
 	QString fileInfoWritten = "file_info_written";
+	QString filePath;
 	QUdpSocket* socket;
-	QFile* file = nullptr;
 	int speedUpdateBlocks = 300;
 	QHash<QString, QVariant> fileInfo;
 	QHash<QString, QVariant> lastData;
 	QTime timerDownload;
 	QTimer* timer = nullptr;
 	QTimer* replyTimer = nullptr;
-	int timerIntetval = 1000;
+	int timerIntetval = 100;
 	int speedDownloadSum = 0;
 	int downloadedBlocks = 0;
-	int uploadedBlocks = 0;
-	double speedSum = 0;
-	qint64 numberOfBlocks = 0;
-	bool isFileInit = false;
 	bool isWaitingList = false;
 	bool isWaitingHash = false;
 	bool isDownloading = false;

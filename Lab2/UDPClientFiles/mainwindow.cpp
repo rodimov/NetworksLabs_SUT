@@ -25,19 +25,19 @@ MainWindow::MainWindow(QWidget *parent)
 	ui->upload->setDefault(true);
 	socket = new QUdpSocket(this);
 	timer = new QTimer(this);
+	timer->setInterval(100);
 	replyTimer = new QTimer(this);
 	replyTimer->setInterval(timerIntetval);
 
 	connect(socket, &QUdpSocket::readyRead, this, &MainWindow::readyRead);
 	connect(timer, &QTimer::timeout, this, &MainWindow::readyRead);
-	connect(replyTimer, &QTimer::timeout, this, &MainWindow::resendData);
+	//connect(replyTimer, &QTimer::timeout, this, &MainWindow::resendData);
 	connect(ui->upload, &QPushButton::clicked, this, &MainWindow::upload);
 	connect(ui->download, &QPushButton::clicked, this, &MainWindow::download);
 }
 
 MainWindow::~MainWindow()
 {
-	delete file;
 	delete ui;
 }
 
@@ -63,13 +63,6 @@ void MainWindow::readyRead() {
 
 	socket->readDatagram(data.data(), data.size(),
 		&sender, &senderPort);
-
-	while (socket->hasPendingDatagrams()) {
-		QNetworkDatagram datagram = socket->receiveDatagram();
-		data += datagram.data();
-	}
-
-	socket->flush();
 
 	if (isWaitingList) {
 		/*QStringList filesList;
@@ -115,32 +108,20 @@ void MainWindow::readyRead() {
 		QHash<QString, QVariant> reply;
 		stream >> reply;
 
-		if (reply.contains(status) && (reply[status] == fileInfoWritten
-			|| reply[status] == blockReady)) {
-			replyTimer->stop();
-			fileTransfer();
-			replyTimer->start();
-
-			if (numberOfBlocks == uploadedBlocks && reply[status] == blockReady) {
-				numberOfBlocks = 0;
-				uploadedBlocks = 0;
-				isFileInit = false;
-				speedSum = 0;
-				replyTimer->stop();
-
-				file->close();
-				delete file;
-				file = nullptr;
-
-				ui->upload->setDisabled(false);
-				ui->download->setDisabled(false);
-				ui->status->setText("Waiting...");
-			}
+		if (reply.contains(getFile)) {
+			timer->stop();
+			fileTransfer(reply);
+			timer->start();
+		} else if (reply.contains(status) && reply[status] == fileDownloaded) {
+			timer->stop();
+			ui->upload->setDisabled(false);
+			ui->download->setDisabled(false);
+			ui->status->setText("Waiting...");
 		}
 	}
 
 	while (socket->hasPendingDatagrams()) {
-		QNetworkDatagram datagram = socket->receiveDatagram();
+		socket->receiveDatagram();
 	}
 }
 
@@ -157,9 +138,10 @@ void MainWindow::upload() {
 		return;
 	}
 
-	file = new QFile(fileName);
-	
-	if (!file->open(QIODevice::ReadOnly)) {
+	filePath = fileName;
+	QFile file(filePath);
+
+	if (!file.open(QIODevice::ReadOnly)) {
 		QMessageBox messageBox;
 		messageBox.setText("Can't open file!!!");
 		messageBox.setStandardButtons(QMessageBox::Ok);
@@ -170,9 +152,11 @@ void MainWindow::upload() {
 	}
 
 	QHash<QString, QVariant> fileInfo;
-	fileInfo.insert("Name", QFileInfo(*file).fileName());
-	fileInfo.insert("Size", file->size());
+	fileInfo.insert("Name", QFileInfo(file).fileName());
+	fileInfo.insert("Size", file.size());
 	lastData = fileInfo;
+
+	file.close();
 
 	QByteArray replyByteArray;
 	QDataStream stream(&replyByteArray, QIODevice::ReadWrite);
@@ -199,52 +183,56 @@ void MainWindow::download() {
 	isWaitingList = true;*/
 }
 
-void MainWindow::fileTransfer() {
-	QString textStatus = "Uploading file: " + QFileInfo(*file).fileName();
-	
-	if (!isFileInit) {
-		qint64 fileSize = file->size();
-		numberOfBlocks = fileSize / BUFFER_SIZE;
-		numberOfBlocks = fileSize % BUFFER_SIZE != 0 ? numberOfBlocks + 1 : numberOfBlocks;
+void MainWindow::fileTransfer(QHash<QString, QVariant> reply) {
+	QString fileName = reply[getFile].toString();
+	qint64 blockNumber = reply[blockAddr].toLongLong();
+	qint64 blocksTotal = reply[blockTotal].toLongLong();
+	qint64 blockLength = reply[blockSize].toLongLong();
 
-		ui->status->setText(textStatus);
-		isFileInit = true;
+	QFile file(filePath);
+
+	if (!file.open(QIODevice::ReadOnly)) {
+		QMessageBox messageBox;
+		messageBox.setText("Can't open file!!!");
+		messageBox.setStandardButtons(QMessageBox::Ok);
+		messageBox.setIcon(QMessageBox::Warning);
+		messageBox.exec();
+
+		return;
 	}
 
-	QTime timer;
-	timer.start();
+	if (fileName != QFileInfo(file).fileName()) {
+		return;
+	}
+
+	QString textStatus = "Uploading file: " + fileName;
+	ui->status->setText(textStatus);
 
 	QByteArray data;
-	data = file->read(BUFFER_SIZE);
+	file.skip(blockLength * blockNumber);
+	data = file.read(blockLength);
 
-	qint64 result = socket->writeDatagram(data, QHostAddress(ip), port);
+	QHash<QString, QVariant> dataMap;
+	dataMap.insert(getFile, fileName);
+	dataMap.insert(blockAddr, blockNumber);
+	dataMap.insert(blockTotal, blocksTotal);
+	dataMap.insert(blockSize, blockLength);
+	dataMap.insert(dataField, data);
+
+	QByteArray replyByteArray;
+	QDataStream stream(&replyByteArray, QIODevice::ReadWrite);
+	stream << dataMap;
+	qint64 result = socket->writeDatagram(replyByteArray, QHostAddress(ip), port);
 
 	if (result == -1) {
 		showError();
 	}
 
-	lastData.clear();
-	lastData.insert(lastBlock, data);
+	ui->progressBar->setValue((blockNumber + 1) * 100 / blocksTotal);
 
-	double uploadMS = timer.elapsed();
-
-	ui->progressBar->setValue((uploadedBlocks + 1) * 100 / numberOfBlocks);
-
-	if (uploadMS != 0) {
-		double speed = (data.size() / 1024.0 / 1024.0) / (uploadMS / 1000.0);
-
-		if (!(uploadedBlocks % speedUpdateBlocks)) {
-			speedSum = 0;
-		}
-
-		speedSum += speed;
-		QString speedString = QString::number(speedSum / (uploadedBlocks % speedUpdateBlocks)) + " mb/s\n";
-		ui->status->setText(textStatus + " " + speedString);
-	}
+	file.close();
 
 	QApplication::processEvents();
-
-	uploadedBlocks++;
 }
 
 void MainWindow::downloadFiles(QStringList& filesList) {
@@ -319,7 +307,6 @@ void MainWindow::resendData() {
 
 	while (socket->hasPendingDatagrams()) {
 		readyRead();
-
 		return;
 	}
 

@@ -57,8 +57,6 @@ void Server::disconnected(ClientAddress* clientAddress) {
 
 	files.remove(clientAddress);
 	filesDownload.remove(clientAddress);
-	filesBlock.remove(clientAddress);
-	filesStatus.remove(clientAddress);
 
 	consoleOut() << "Client disconnected: " << clientAddress->ip.toString()
 		+ ":" + QString::number(clientAddress->port) << endl;
@@ -76,32 +74,9 @@ void Server::readyRead() {
 	udpServer->readDatagram(data.data(), data.size(),
 		&sender, &senderPort);
 
-	while (udpServer->hasPendingDatagrams()) {
-		QNetworkDatagram datagram = udpServer->receiveDatagram();
-		data += datagram.data();
-	}
-
-	udpServer->flush();
-
 	ClientAddress clientAddress;
 	clientAddress.ip = sender;
 	clientAddress.port = senderPort;
-
-	/*if (fileInfoData.contains(isContainsClient(clientAddress, files))
-		&& (fileInfoData[isContainsClient(clientAddress, files)] == data)) {
-		ClientAddress* client = isContainsClient(clientAddress, files);
-		
-		if (!client) {
-			return;
-		}
-		
-		QTimer* timer = clientsForTimers[client];
-		timer->stop();
-		sendReply(client, status, fileInfoWritten);
-		timer->start();
-
-		return;
-	}*/
 
 	if (isContainsClient(clientAddress, files)) {
 		ClientAddress* client = isContainsClient(clientAddress, files);
@@ -109,15 +84,22 @@ void Server::readyRead() {
 		QTimer* timer = clientsForTimers[client];
 		timer->stop();
 
-		appendToFile(fileInfo, data);
+		appendToFile(fileInfo, data, client);
 
 		files[client] = fileInfo;
 		client->attemptsLeft = timerAttempts;
-		sendReply(client, status, blockReady);
-		filesStatus[client] = blockReady;
 
 		if (fileInfo.size == fileInfo.progress) {
 			consoleOut() << "File " << fileInfo.fileName << " dowloaded!" << endl;
+
+			QHash<QString, QVariant> reply;
+			reply.insert(status, fileDownloaded);
+
+			QByteArray replyByteArray;
+			QDataStream dataStream(&replyByteArray, QIODevice::ReadWrite);
+			dataStream << reply;
+			qint64 result = udpServer->writeDatagram(replyByteArray, client->ip, client->port);
+
 			files.remove(client);
 			disconnected(client);
 		} else {
@@ -125,7 +107,7 @@ void Server::readyRead() {
 		}
 
 		while (udpServer->hasPendingDatagrams()) {
-			QNetworkDatagram datagram = udpServer->receiveDatagram();
+			udpServer->receiveDatagram();
 		}
 
 		return;
@@ -160,11 +142,53 @@ void Server::readyRead() {
 	file.size = request["Size"].toLongLong();
 	file.progress = 0;
 
+	if (!QDir(serverDir).exists()) {
+		QDir().mkdir(serverDir);
+	}
+
+	QFile fileVar(serverDir + "/" + file.fileName);
+
+	if (!fileVar.open(QIODevice::ReadWrite)) {
+		consoleOut() << "Can't create file" << endl;
+		return;
+	}
+
+	QDataStream fileStream(&fileVar);
+	qint64 fileBlockSize = 45000;
+	qint64 fileBlockNum = file.size / fileBlockSize;
+
+	for (int i = 0; i < fileBlockNum; i++) {
+		QByteArray data;
+		data.append(fileBlockSize, 0);
+		fileStream << data;
+	}
+
+	if (file.size % fileBlockSize) {
+		qint64 lastBlockSize = file.size % fileBlockSize;
+		QByteArray data;
+		data.append(lastBlockSize, 0);
+		fileStream << data;
+	}
+
+	fileVar.close();
+
 	fileInfoData.insert(client, data);
 
 	files.insert(client, file);
-	sendReply(client, status, fileInfoWritten);
-	filesStatus.insert(client, fileInfoWritten);
+
+	qint64 bufferBlocksNum = file.size / BUFFER_SIZE;
+	bufferBlocksNum = file.size % BUFFER_SIZE ? bufferBlocksNum + 1 : bufferBlocksNum;
+
+	QHash<QString, QVariant> reply;
+	reply.insert(getFile, file.fileName);
+	reply.insert(blockAddr, 0);
+	reply.insert(blockTotal, bufferBlocksNum);
+	reply.insert(blockSize, BUFFER_SIZE);
+
+	QByteArray replyByteArray;
+	QDataStream dataStream(&replyByteArray, QIODevice::ReadWrite);
+	dataStream << reply;
+	qint64 result = udpServer->writeDatagram(replyByteArray, client->ip, client->port);
 
 	QTimer* timer = new QTimer(this);
 	timer->setInterval(timerIntetval);
@@ -173,29 +197,46 @@ void Server::readyRead() {
 	connect(timer, &QTimer::timeout, this, &Server::resendData);
 	timer->start();
 
+	dataForResend.insert(client, reply);
+
 	while (udpServer->hasPendingDatagrams()) {
-		QNetworkDatagram datagram = udpServer->receiveDatagram();
+		udpServer->receiveDatagram();
 	}
 
 	consoleOut() << "File " << file.fileName << " start downloading" << endl;
 	consoleOut() << "Size: " << file.size / 1024 / 1024 << "mb" << endl;
 }
 
-void Server::appendToFile(FileInfo& fileInfo, QByteArray& data) {
-	if (!QDir(serverDir).exists()) {
-		QDir().mkdir(serverDir);
-	}
+void Server::appendToFile(FileInfo& fileInfo, QByteArray& data, ClientAddress* clientAddress) {
+	QDataStream stream(data);
+	QHash<QString, QVariant> reply;
+	stream >> reply;
+
+	qint64 blockNumber = reply[blockAddr].toLongLong();
+	qint64 blockLength = reply[blockSize].toLongLong();
 
 	QFile file(serverDir + "/" + fileInfo.fileName);
 
-	if (!file.open(QIODevice::Append)) {
+	if (!file.open(QIODevice::ReadWrite)) {
 		return;
 	}
 
-	file.write(data);
+	file.skip(blockNumber * blockLength);
+	file.write(reply[dataField].toByteArray());
 	file.close();
 
-	fileInfo.progress += data.size();
+	fileInfo.progress = blockNumber * blockLength + reply[dataField].toByteArray().size();
+
+	QHash<QString, QVariant> request;
+	request.insert(getFile, fileInfo.fileName);
+	request.insert(blockAddr, blockNumber + 1);
+	request.insert(blockTotal, reply[blockTotal].toLongLong());
+	request.insert(blockSize, blockLength);
+
+	QByteArray replyByteArray;
+	QDataStream dataStream(&replyByteArray, QIODevice::ReadWrite);
+	dataStream << request;
+	qint64 result = udpServer->writeDatagram(replyByteArray, clientAddress->ip, clientAddress->port);
 
 	consoleOut() << "File " << file.fileName() <<
 		" download " << static_cast<int>(fileInfo.progress * 100.0 / fileInfo.size) << "%" << endl;
@@ -282,7 +323,6 @@ void Server::uploadFile(ClientAddress* clientAddress) {
 
 void Server::resendData() {
 	QTimer* timer = static_cast<QTimer*>(sender());
-	QByteArray replyByteArray;
 
 	if (!timersForClients.contains(timer)) {
 		delete timer;
@@ -297,11 +337,8 @@ void Server::resendData() {
 
 		udpServer->readDatagram(data.data(), data.size(), &clientAddress->ip, &clientAddress->port);
 
-		udpServer->flush();
-
 		if (data.size()) {
-			appendToFile(files[clientAddress], data);
-
+			appendToFile(files[clientAddress], data, clientAddress);
 			return;
 		}
 	}
@@ -313,17 +350,18 @@ void Server::resendData() {
 		return;
 	}
 
-	if (filesBlock.contains(clientAddress)) {
-		qint64 result = udpServer->writeDatagram(filesBlock[clientAddress], clientAddress->ip, clientAddress->port);
+	if (dataForResend.contains(clientAddress)) {
+		QHash<QString, QVariant> resendHash = dataForResend[clientAddress];
+
+		QByteArray replyByteArray;
+		QDataStream dataStream(&replyByteArray, QIODevice::ReadWrite);
+		dataStream << resendHash;
+
+		qint64 result = udpServer->writeDatagram(replyByteArray, clientAddress->ip, clientAddress->port);
 
 		if (result == -1) {
 			consoleOut() << "Write datagram error: " << udpServer->error() << endl;
 		}
-	}
-
-	if (filesStatus.contains(clientAddress)) {
-		sendReply(clientAddress, status, filesStatus[clientAddress]);
-		consoleOut() << "Retry send status: " << filesStatus[clientAddress].toString() << endl;
 	}
 
 	clientAddress->attemptsLeft -= 1;

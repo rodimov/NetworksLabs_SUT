@@ -30,7 +30,7 @@ public:
 private slots:
 	void disconnected(ClientAddress* clientAddress);
 	void readyRead();
-	void appendToFile(FileInfo& fileInfo, QByteArray& data);
+	void appendToFile(FileInfo& fileInfo, QByteArray& data, ClientAddress* clientAddress);
 	void sendFilesList(ClientAddress* clientAddress);
 	void sendFileInfo(QString& fileName, ClientAddress* clientAddress);
 	void uploadFile(ClientAddress* clientAddress);
@@ -44,19 +44,24 @@ private:
 
 	QUdpSocket* udpServer = nullptr;
 	int port = 3510;
-	int timerIntetval = 10000;
+	int timerIntetval = 100;
 	int timerAttempts = 10;
 	QString serverDir = "server_files_udp";
 	QString status = "status";
+	QString getFile = "get_file";
+	QString blockAddr = "block_addr";
+	QString blockTotal = "block_total";
+	QString blockSize = "block_size";
+	QString fileDownloaded = "fileDownloaded";
 	QString blockReady = "block_ready";
+	QString dataField = "data";
 	QString fileInfoWritten = "file_info_written";
 	QHash<ClientAddress*, FileInfo> files;
 	QHash<ClientAddress*, FileInfo> filesDownload;
-	QHash<ClientAddress*, QByteArray> filesBlock;
-	QHash<ClientAddress*, QVariant> filesStatus;
 	QHash<QTimer*, ClientAddress*> timersForClients;
 	QHash<ClientAddress*, QTimer*> clientsForTimers;
 	QHash<ClientAddress*, QByteArray> fileInfoData;
+	QHash<ClientAddress*, QHash<QString, QVariant>> dataForResend;
 };
 
 #endif //SERVER_H
