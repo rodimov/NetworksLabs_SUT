@@ -6,6 +6,7 @@
 #include <QDataStream>
 #include <QFile>
 #include <QDir>
+#include <QCoreApplication>
 
 const qint64 BUFFER_SIZE = 307704;
 
@@ -215,6 +216,8 @@ void Server::uploadFile(QTcpSocket* tcpSocket) {
 
 		consoleOut() << "Uploading file: " + fileInfo.fileName << " "
 			<< QString::number((i + 1) * 100 / numberOfBlocks) << "%" << endl;
+
+		QCoreApplication::processEvents();
 	}
 
 	filesDownload.remove(tcpSocket);

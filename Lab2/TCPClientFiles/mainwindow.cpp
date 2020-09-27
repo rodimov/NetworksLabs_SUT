@@ -123,6 +123,8 @@ void MainWindow::upload() {
 		tr("All Files(*.*)"));
 	
 	if (fileName.isEmpty()) {
+		ui->upload->setDisabled(false);
+		ui->download->setDisabled(false);
 		return;
 	}
 
