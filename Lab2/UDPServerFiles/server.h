@@ -33,7 +33,7 @@ private slots:
 	void appendToFile(FileInfo& fileInfo, QByteArray& data, ClientAddress* clientAddress);
 	void sendFilesList(ClientAddress* clientAddress);
 	void sendFileInfo(QString& fileName, ClientAddress* clientAddress);
-	void uploadFile(ClientAddress* clientAddress);
+	void uploadFile(ClientAddress* clientAddress, QHash<QString, QVariant> reply);
 	void resendData();
 
 private:
@@ -49,10 +49,14 @@ private:
 	QString serverDir = "server_files_udp";
 	QString status = "status";
 	QString getFile = "get_file";
+	QString getFileUpload = "get_file_upload";
 	QString blockAddr = "block_addr";
 	QString blockTotal = "block_total";
 	QString blockSize = "block_size";
 	QString fileDownloaded = "fileDownloaded";
+	QString getFileDownload = "get_file_download";
+	QString getFilesList = "get_files_list";
+	QString filesList = "files_list";
 	QString blockReady = "block_ready";
 	QString dataField = "data";
 	QString fileInfoWritten = "file_info_written";
@@ -60,7 +64,6 @@ private:
 	QHash<ClientAddress*, FileInfo> filesDownload;
 	QHash<QTimer*, ClientAddress*> timersForClients;
 	QHash<ClientAddress*, QTimer*> clientsForTimers;
-	QHash<ClientAddress*, QByteArray> fileInfoData;
 	QHash<ClientAddress*, QHash<QString, QVariant>> dataForResend;
 };
 

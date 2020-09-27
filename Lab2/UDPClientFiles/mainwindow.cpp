@@ -24,13 +24,10 @@ MainWindow::MainWindow(QWidget *parent)
 	ui->progressBar->setValue(0);
 	ui->upload->setDefault(true);
 	socket = new QUdpSocket(this);
-	timer = new QTimer(this);
-	timer->setInterval(100);
-	replyTimer = new QTimer(this);
-	replyTimer->setInterval(timerIntetval);
+	//replyTimer = new QTimer(this);
+	//replyTimer->setInterval(timerIntetval);
 
 	connect(socket, &QUdpSocket::readyRead, this, &MainWindow::readyRead);
-	connect(timer, &QTimer::timeout, this, &MainWindow::readyRead);
 	//connect(replyTimer, &QTimer::timeout, this, &MainWindow::resendData);
 	connect(ui->upload, &QPushButton::clicked, this, &MainWindow::upload);
 	connect(ui->download, &QPushButton::clicked, this, &MainWindow::download);
@@ -42,14 +39,14 @@ MainWindow::~MainWindow()
 }
 
 void MainWindow::disconnected() {
-	if (isDownloading) {
-		QString fileName = fileInfo["Name"].toString();
-		QFile file(clientFolder + "/" + fileName);
+	//if (0/*isDownloading*/) {
+	//	QString fileName = fileInfo["Name"].toString();
+	//	QFile file(clientFolder + "/" + fileName);
 
-		if (file.exists()) {
-			file.remove();
-		}
-	}
+	//	if (file.exists()) {
+	//		file.remove();
+	//	}
+	//}
 
 	close();
 }
@@ -64,64 +61,27 @@ void MainWindow::readyRead() {
 	socket->readDatagram(data.data(), data.size(),
 		&sender, &senderPort);
 
-	if (isWaitingList) {
-		/*QStringList filesList;
-		stream >> filesList;
-		downloadFiles(filesList);
+	QDataStream stream(data);
+	QHash<QString, QVariant> reply;
+	stream >> reply;
 
-		isWaitingList = false;*/
-	} else if (isWaitingHash) {
-		/*stream >> fileInfo;
-
-		if (!fileInfo.contains("Name") || !fileInfo.contains("Size")
-			|| !fileInfo.contains("Progress")) {
-
-			isWaitingHash = false;
-			return;
-		}
-
-		QHash<QString, QVariant> request;
-		request.insert("startDownload", 0);
-
-		stream << request;
-
-		isWaitingHash = false;
-		isDownloading = true;
-
-		ui->download->setDisabled(true);
-		ui->upload->setDisabled(true);*/
-	} else if (isDownloading) {
-		/*QByteArray data = serverSocket->readAll();
-
-		downloading(data);
-
-		if (fileInfo["Progress"].toLongLong() == fileInfo["Size"].toLongLong()) {
-			isDownloading = false;
-			timer->stop();
-			ui->status->setText("Waiting...");
-			ui->download->setDisabled(false);
-			ui->upload->setDisabled(false);
-			downloadedBlocks = 0;
-		}*/
-	} else {
-		QDataStream stream(data);
-		QHash<QString, QVariant> reply;
-		stream >> reply;
-
+	if (reply.contains(filesList)) {
+		downloadFiles(reply[filesList].toStringList());
+	} else if (reply.contains("Name") && reply.contains("Size")) {
+		requestFirstPart(reply);
+	} else if (reply.contains(getFileUpload)) {
+		downloading(reply);
+	} else if (reply.contains(getFile) || reply.contains(status)) {
 		if (reply.contains(getFile)) {
-			timer->stop();
+			//timer->stop();
 			fileTransfer(reply);
-			timer->start();
-		} else if (reply.contains(status) && reply[status] == fileDownloaded) {
-			timer->stop();
+			//timer->start();
+		} else if (reply[status] == fileDownloaded) {
+			//timer->stop();
 			ui->upload->setDisabled(false);
 			ui->download->setDisabled(false);
 			ui->status->setText("Waiting...");
 		}
-	}
-
-	while (socket->hasPendingDatagrams()) {
-		socket->receiveDatagram();
 	}
 }
 
@@ -154,7 +114,6 @@ void MainWindow::upload() {
 	QHash<QString, QVariant> fileInfo;
 	fileInfo.insert("Name", QFileInfo(file).fileName());
 	fileInfo.insert("Size", file.size());
-	lastData = fileInfo;
 
 	file.close();
 
@@ -169,18 +128,7 @@ void MainWindow::upload() {
 		showError();
 	}
 
-	replyTimer->start();
-}
-
-void MainWindow::download() {
-	/*QHash<QString, QVariant> request;
-	request.insert("download", 0);
-
-	QDataStream socketStream(serverSocket);
-
-	socketStream << request;
-
-	isWaitingList = true;*/
+	//replyTimer->start();
 }
 
 void MainWindow::fileTransfer(QHash<QString, QVariant> reply) {
@@ -231,12 +179,24 @@ void MainWindow::fileTransfer(QHash<QString, QVariant> reply) {
 	ui->progressBar->setValue((blockNumber + 1) * 100 / blocksTotal);
 
 	file.close();
+}
 
-	QApplication::processEvents();
+void MainWindow::download() {
+	QHash<QString, QVariant> request;
+	request.insert(getFilesList, 0);
+
+	QByteArray replyByteArray;
+	QDataStream dataStream(&replyByteArray, QIODevice::ReadWrite);
+	dataStream << request;
+	qint64 result = socket->writeDatagram(replyByteArray, QHostAddress(ip), port);
+
+	if (result == -1) {
+		showError();
+	}
 }
 
 void MainWindow::downloadFiles(QStringList& filesList) {
-	/*DownloadDialog downloadDialog;
+	DownloadDialog downloadDialog;
 	downloadDialog.setFiles(filesList);
 
 	if (downloadDialog.exec() != QDialog::Accepted) {
@@ -249,61 +209,141 @@ void MainWindow::downloadFiles(QStringList& filesList) {
 		return;
 	}
 
-	QDataStream socketStream(serverSocket);
-
 	QHash<QString, QVariant> request;
-	request.insert("fileName", fileName);
+	request.insert(getFileDownload, fileName);
 
-	socketStream << request;
+	QByteArray replyByteArray;
+	QDataStream dataStream(&replyByteArray, QIODevice::ReadWrite);
+	dataStream << request;
+	qint64 result = socket->writeDatagram(replyByteArray, QHostAddress(ip), port);
 
-	isWaitingHash = true;*/
+	if (result == -1) {
+		showError();
+	}
 }
 
-void MainWindow::downloading(QByteArray& data) {
-	/*timer->stop();
-	double downloadMS = timerDownload.elapsed();
+void MainWindow::requestFirstPart(QHash<QString, QVariant> reply) {
+	FileInfo downloadFileInfo;
+	downloadFileInfo.fileName = reply["Name"].toString();
+	downloadFileInfo.size = reply["Size"].toLongLong();
+	downloadFileInfo.progress = 0;
 
-	QString textStatus = "Downloading file: " + fileInfo["Name"].toString();
-	ui->status->setText(textStatus);
-	
 	if (!QDir(clientFolder).exists()) {
 		QDir().mkdir(clientFolder);
 	}
 
-	QFile file(clientFolder + "/" + fileInfo["Name"].toString());
+	QFile fileVar(clientFolder + "/" + downloadFileInfo.fileName);
 
-	if (!file.open(QIODevice::Append)) {
+	if (!fileVar.open(QIODevice::ReadWrite)) {
+		QMessageBox* messageBox = new QMessageBox(this);
+		messageBox->setAttribute(Qt::WA_DeleteOnClose);
+		messageBox->setIcon(QMessageBox::Warning);
+		messageBox->setStandardButtons(QMessageBox::Ok);
+		messageBox->setText("Can't open file: " + fileVar.fileName());
+		messageBox->show();
 		return;
 	}
 
-	file.write(data);
-	file.close();
+	QDataStream fileStream(&fileVar);
+	qint64 fileBlockSize = 45000;
+	qint64 fileBlockNum = downloadFileInfo.size / fileBlockSize;
 
-	fileInfo["Progress"] = fileInfo["Progress"].toLongLong() + data.size();
-	timerDownload.start();
-
-	ui->progressBar->setValue(fileInfo["Progress"].toLongLong() * 100 / fileInfo["Size"].toLongLong());
-	downloadedBlocks++;
-
-	if (downloadMS != 0 && (downloadedBlocks % speedUpdateBlocks) != 0) {
-		double speed = (data.size() / 1024.0 / 1024.0) / (downloadMS / 1000.0);
-
-		if (!(downloadedBlocks % speedUpdateBlocks)) {
-			speedDownloadSum = 0;
-		}
-
-		speedDownloadSum += speed;
-		QString speedString = QString::number(speedDownloadSum / (downloadedBlocks % speedUpdateBlocks)) + " mb/s\n";
-		ui->status->setText(textStatus + " " + speedString);
+	for (int i = 0; i < fileBlockNum; i++) {
+		QByteArray data;
+		data.append(fileBlockSize, 0);
+		fileVar.write(data);
+		fileVar.flush();
 	}
 
-	timer->start(1000);
+	if (downloadFileInfo.size % fileBlockSize) {
+		qint64 lastBlockSize = downloadFileInfo.size % fileBlockSize;
+		QByteArray data;
+		data.append(lastBlockSize, 0);
+		fileVar.write(data);
+		fileVar.flush();
+	}
 
-	QApplication::processEvents();*/
+	fileVar.close();
+
+	qint64 bufferBlocksNum = downloadFileInfo.size / BUFFER_SIZE;
+	bufferBlocksNum = downloadFileInfo.size % BUFFER_SIZE ? bufferBlocksNum + 1 : bufferBlocksNum;
+
+	QHash<QString, QVariant> request;
+	request.insert(getFileUpload, downloadFileInfo.fileName);
+	request.insert(blockAddr, 0);
+	request.insert(blockTotal, bufferBlocksNum);
+	request.insert(blockSize, BUFFER_SIZE);
+
+	QByteArray replyByteArray;
+	QDataStream dataStream(&replyByteArray, QIODevice::ReadWrite);
+	dataStream << request;
+	qint64 result = socket->writeDatagram(replyByteArray, QHostAddress(ip), port);
+
+	if (result == -1) {
+		showError();
+	}
+
+	ui->download->setDisabled(true);
+	ui->upload->setDisabled(true);
+}
+
+void MainWindow::downloading(QHash<QString, QVariant> reply) {
+	QString fileName = reply[getFileUpload].toString();
+	qint64 blockNumber = reply[blockAddr].toLongLong();
+	qint64 blocksNum = reply[blockTotal].toLongLong();
+	qint64 blockLength = reply[blockSize].toLongLong();
+
+	QFile file(clientFolder + "/" + fileName);
+
+	if (!file.open(QIODevice::ReadWrite)) {
+		return;
+	}
+
+	file.skip(blockNumber * blockLength);
+	file.write(reply[dataField].toByteArray());
+	file.close();
+
+	QString textStatus = "Downloading file: " + fileName;
+	ui->status->setText(textStatus);
+
+	ui->progressBar->setValue((blockNumber + 1) * 100 / blocksNum);
+
+	qint64 result;
+
+	if (blocksNum + 1 == blockNumber) {
+		QHash<QString, QVariant> reply;
+		reply.insert(fileDownloaded, fileName);
+
+		QByteArray replyByteArray;
+		QDataStream dataStream(&replyByteArray, QIODevice::ReadWrite);
+		dataStream << reply;
+		
+		result = socket->writeDatagram(replyByteArray, QHostAddress(ip), port);
+
+		ui->upload->setDisabled(false);
+		ui->download->setDisabled(false);
+		ui->status->setText("Waiting...");
+	} else {
+		QHash<QString, QVariant> request;
+		request.insert(getFileUpload, fileName);
+		request.insert(blockAddr, blockNumber + 1);
+		request.insert(blockTotal, reply[blockTotal].toLongLong());
+		request.insert(blockSize, blockLength);
+
+		QByteArray replyByteArray;
+		QDataStream dataStream(&replyByteArray, QIODevice::ReadWrite);
+		dataStream << request;
+		
+		result = socket->writeDatagram(replyByteArray, QHostAddress(ip), port);
+	}
+
+	if (result == -1) {
+		showError();
+	}
 }
 
 void MainWindow::resendData() {
-	replyTimer->stop();
+	/*replyTimer->stop();
 
 	while (socket->hasPendingDatagrams()) {
 		readyRead();
@@ -326,7 +366,7 @@ void MainWindow::resendData() {
 		showError();
 	}
 
-	replyTimer->start();
+	replyTimer->start();*/
 }
 
 void MainWindow::showError() {

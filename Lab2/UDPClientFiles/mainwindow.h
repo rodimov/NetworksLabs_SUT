@@ -3,9 +3,16 @@
 
 #include <QMainWindow>
 #include <QTime>
+#include <QVariant>
 
 class QUdpSocket;
 class QFile;
+
+struct FileInfo {
+	QString fileName;
+	qint64 size;
+	qint64 progress;
+};
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -32,9 +39,10 @@ private slots:
 	void upload();
 	void download();
 	void downloadFiles(QStringList& filesList);
-	void downloading(QByteArray& data);
+	void downloading(QHash<QString, QVariant> reply);
 	void resendData();
 	void showError();
+	void requestFirstPart(QHash<QString, QVariant> reply);
 
 private:
 	Ui::MainWindow* ui;
@@ -43,27 +51,25 @@ private:
 	QString clientFolder = "client_files_upd";
 	QString status = "status";
 	QString getFile = "get_file";
+	QString getFileUpload = "get_file_upload";
 	QString blockAddr = "block_addr";
 	QString blockTotal = "block_total";
 	QString blockSize = "block_size";
 	QString fileDownloaded = "fileDownloaded";
 	QString dataField = "data";
 	QString blockReady = "block_ready";
-	QString lastBlock = "last_block";
+	QString filesList = "files_list";
+	QString getFilesList = "get_files_list";
+	QString getFileDownload = "get_file_download";
 	QString fileInfoWritten = "file_info_written";
 	QString filePath;
 	QUdpSocket* socket;
 	int speedUpdateBlocks = 300;
-	QHash<QString, QVariant> fileInfo;
-	QHash<QString, QVariant> lastData;
 	QTime timerDownload;
 	QTimer* timer = nullptr;
 	QTimer* replyTimer = nullptr;
 	int timerIntetval = 100;
 	int speedDownloadSum = 0;
 	int downloadedBlocks = 0;
-	bool isWaitingList = false;
-	bool isWaitingHash = false;
-	bool isDownloading = false;
 };
 #endif // MAINWINDOW_H
