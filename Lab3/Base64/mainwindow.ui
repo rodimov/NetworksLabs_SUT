@@ -6,71 +6,40 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>438</width>
-    <height>132</height>
+    <width>472</width>
+    <height>508</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>File TCP Client</string>
+   <string>Base64</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout_3">
     <item>
-     <layout class="QHBoxLayout" name="horizontalLayout">
+     <layout class="QVBoxLayout" name="verticalLayout">
       <item>
-       <spacer name="horizontalSpacer_2">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>40</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item>
-       <widget class="QPushButton" name="upload">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="layoutDirection">
-         <enum>Qt::LeftToRight</enum>
-        </property>
+       <widget class="QLabel" name="label">
         <property name="text">
-         <string>upload</string>
+         <string>Base64 encoded:</string>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="download">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
+       <widget class="QTextEdit" name="encoded"/>
+      </item>
+      <item>
+       <widget class="QPushButton" name="decrypt">
         <property name="text">
-         <string>download</string>
+         <string>decrypt</string>
         </property>
        </widget>
       </item>
       <item>
-       <spacer name="horizontalSpacer">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
+       <widget class="QPushButton" name="decryptFile">
+        <property name="text">
+         <string>decrypt file</string>
         </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>40</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
+       </widget>
       </item>
      </layout>
     </item>
@@ -79,14 +48,24 @@
       <item>
        <widget class="QLabel" name="status">
         <property name="text">
-         <string>TextLabel</string>
+         <string>Base64 decrypted:</string>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QProgressBar" name="progressBar">
-        <property name="value">
-         <number>24</number>
+       <widget class="QTextEdit" name="decrypted"/>
+      </item>
+      <item>
+       <widget class="QPushButton" name="encode">
+        <property name="text">
+         <string>encode</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="encodeFile">
+        <property name="text">
+         <string>encode file</string>
         </property>
        </widget>
       </item>
@@ -99,7 +78,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>438</width>
+     <width>472</width>
      <height>21</height>
     </rect>
    </property>

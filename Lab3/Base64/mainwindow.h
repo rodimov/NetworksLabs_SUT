@@ -16,9 +16,17 @@ public:
 	~MainWindow();
 
 private:
-	void fileTransfer();
+	QString encodeBytes(QByteArray bytes);
+	QByteArray decryptString(QString string);
+
+	const QString base64Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+		"abcdefghijklmnopqrstuvwxyz0123456789+/";
 
 private slots:
+	void encode();
+	void encodeFile();
+	void decrypt();
+	void decryptFile();
 
 private:
 	Ui::MainWindow* ui;
