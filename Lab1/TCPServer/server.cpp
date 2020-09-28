@@ -45,8 +45,8 @@ void Server::disconnected() {
 }
 
 void Server::readyRead() {
-	QTcpSocket* ñlientSocket = static_cast<QTcpSocket*>(QObject::sender());
-	QDataStream stream(ñlientSocket);
+	QTcpSocket* clientSocket = static_cast<QTcpSocket*>(QObject::sender());
+	QDataStream stream(clientSocket);
 	QString message;
 
 	stream >> message;
