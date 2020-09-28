@@ -28,6 +28,7 @@ add_subdirectory(Lab2/TCPServerFiles)
 add_subdirectory(Lab2/UDPClientFiles)
 add_subdirectory(Lab2/UDPServerFiles)
 add_subdirectory(Lab3/Base64)
+add_subdirectory(Lab4/SMTPSender)
 
 foreach(QT5_LIB ${QT5_LIBS})
 	set(QT5_DLLS_RELEASE ${QT5_DLLS_RELEASE} ${QT5_LIB}.dll)
