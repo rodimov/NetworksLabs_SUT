@@ -8,7 +8,6 @@ PortDialog::PortDialog(QWidget* parent)
 	ui->setupUi(this);
 
 	setFixedSize(width(), height());
-	ui->ip->setText("localhost");
 	ui->port->setFocus();
 
 	connect(ui->ok, &QPushButton::clicked, this, &PortDialog::accept);
@@ -24,4 +23,12 @@ int PortDialog::getPort() {
 
 QString PortDialog::getIP() {
 	return ui->ip->text();
+}
+
+QString PortDialog::getUsername() {
+	return QString::fromLatin1(ui->username->text().toLatin1().toBase64());
+}
+
+QString PortDialog::getPassword() {
+	return QString::fromLatin1(ui->password->text().toLatin1().toBase64());
 }

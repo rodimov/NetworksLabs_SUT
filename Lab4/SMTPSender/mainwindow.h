@@ -20,9 +20,13 @@ public:
 	int getPort() { return port; }
 	void setIP(QString ip) { this->ip = ip; }
 	QString getIP() { return ip; }
+	void setUsername(QString username) { this->username = username; }
+	QString getUsername() { return username; }
+	void setPassword(QString password) { this->password = password; }
+	QString getPassword() { return password; }
 
 private:
-	void connectToServer()
+	void connectToServer();
 
 private slots:
 	void disconnected();
@@ -32,6 +36,8 @@ private:
 	Ui::MainWindow* ui;
 	int port = 0;
 	QString ip;
+	QString username;
+	QString password;
 	QTcpSocket* socket;
 	
 };

@@ -1,14 +1,9 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
 
-#include "downloaddialog.h"
-
 #include <QTcpSocket>
 #include <QFileDialog>
 #include <QMessageBox>
-#include <QTimer>
-
-const qint64 BUFFER_SIZE = 307704;
 
 MainWindow::MainWindow(QWidget *parent)
 	: QMainWindow(parent),
@@ -22,12 +17,18 @@ MainWindow::MainWindow(QWidget *parent)
 	connect(socket, &QTcpSocket::readyRead, this, &MainWindow::readyRead);
 	
 	connectToServer();
+	ui->send->setFocus();
 }
 
 MainWindow::~MainWindow()
 {
-	if (serverSocket->isOpen()) {
-		serverSocket->disconnect();
+	if (socket->isOpen()) {
+		QDataStream stream(socket);
+		QString reply = "QUIT";
+
+		stream << reply;
+
+		socket->disconnect();
 	}
 
 	delete ui;
@@ -36,7 +37,7 @@ MainWindow::~MainWindow()
 void MainWindow::connectToServer() {
 	socket->connectToHost(ip, port);
 
-	if (serverSocket->state() != QAbstractSocket::ConnectedState) {
+	if (socket->state() != QAbstractSocket::ConnectedState) {
 		close();
 	}
 }

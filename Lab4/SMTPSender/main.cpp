@@ -15,6 +15,8 @@ int main(int argc, char* argv[])
 	MainWindow w;
 	w.setPort(portDialog.getPort());
 	w.setIP(portDialog.getIP());
+	w.setUsername(portDialog.getUsername());
+	w.setPassword(portDialog.getPassword());
 
 	w.show();
 

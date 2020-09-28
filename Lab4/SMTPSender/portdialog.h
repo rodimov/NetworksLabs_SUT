@@ -16,6 +16,8 @@ public:
 	~PortDialog();
 	int getPort();
 	QString getIP();
+	QString getUsername();
+	QString getPassword();
 
 private:
 	Ui::PortDialog*ui;
