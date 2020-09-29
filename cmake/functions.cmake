@@ -26,6 +26,18 @@ function(ADD_EXTENTION FILES_LIST NAMES_LIST EXTENTIONS)
 	set(${FILES_LIST} "${${FILES_LIST}}" "${FILES_RES}" PARENT_SCOPE)
 endfunction()
 
+function(INIT_GUI_EXECUTABLE EXECUTABLE FILES )
+	if(WIN32)
+		set(GUI_OPTION WIN32)
+	elseif(APPLE)
+		set(GUI_OPTION MACOSX_BUNDLE)
+	elseif(UNIX)
+		set(GUI_OPTION "")
+	endif()
+
+	add_executable(${EXECUTABLE} ${GUI_OPTION} "${FILES}")
+endfunction()
+
 function(SET_LIBS EXECUTABLE OUTPUT_DIR QT5_PLUGINS)
 	target_link_libraries(${EXECUTABLE} PRIVATE "${QT5_PLUGINS}")
 	set_target_properties(${EXECUTABLE}
