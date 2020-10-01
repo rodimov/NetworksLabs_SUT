@@ -2,7 +2,8 @@ set(PROJECT_DIR path/to/current_project)
 set(QT5_LOCATION path/to/qt_dir)
 set(QT5_LIBS Qt5Concurrent Qt5Core Qt5Gui Qt5Help Qt5Location Qt5Multimedia Qt5MultimediaWidgets
 	Qt5Network Qt5Scxml Qt5Svg Qt5Test Qt5WebChannel Qt5WebEngine Qt5WebEngineCore Qt5WebEngineWidgets
-	Qt5WebSockets Qt5WebView Qt5Widgets Qt5WinExtras Qt5Xml Qt5XmlPatterns)
+	Qt5WebSockets Qt5WebView Qt5Widgets Qt5WinExtras Qt5Xml Qt5XmlPatterns Qt5Quick Qt5PrintSupport
+	Qt5QuickWidgets Qt5Positioning Qt5Qml)
 set(QT5_PLUGINS audio bearer canbus generic geometryloaders iconengines imageformats mediaservice
 	platforms platformthemes playlistformats renderplugins scenegraph sceneparsers sensorgestures
 	styles webview)

@@ -3,11 +3,21 @@
 
 #include <QMainWindow>
 
-class QTcpSocket;
+class QSslSocket;
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
+
+enum SmtpError
+{
+	ConnectionTimeoutError,
+	ResponseTimeoutError,
+	SendDataTimeoutError,
+	AuthenticationFailedError,
+	ServerError,    // 4xx smtp error
+	ClientError     // 5xx smtp error
+};
 
 class MainWindow : public QMainWindow
 {
@@ -16,6 +26,7 @@ class MainWindow : public QMainWindow
 public:
 	MainWindow(QWidget* parent = nullptr);
 	~MainWindow();
+	void connectToServer();
 	void setPort(int port) { this->port = port; }
 	int getPort() { return port; }
 	void setIP(QString ip) { this->ip = ip; }
@@ -25,8 +36,15 @@ public:
 	void setPassword(QString password) { this->password = password; }
 	QString getPassword() { return password; }
 
+protected:
+	void closeEvent(QCloseEvent* event);
+
 private:
-	void connectToServer();
+	bool waitForResponse();
+	void showError(SmtpError error);
+	bool sendMessage(const QString& text);
+	void login(bool isWebViewWasOpened = false);
+	void openWebPage(QString& url);
 
 private slots:
 	void disconnected();
@@ -38,7 +56,11 @@ private:
 	QString ip;
 	QString username;
 	QString password;
-	QTcpSocket* socket;
-	
+	QSslSocket* socket;
+	QString responseText;
+	int responseCode;
+	int connectionTimeout = 5000;
+	int responseTimeout = 5000;
+	int sendMessageTimeout = 60000;
 };
 #endif // MAINWINDOW_H

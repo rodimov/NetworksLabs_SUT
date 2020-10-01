@@ -12,6 +12,8 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+find_package(Qt5 COMPONENTS Core Widgets Network WebEngineWidgets REQUIRED)
+
 include(../../cmake/functions.cmake)
 include(../../cmake/config.cmake)
 
@@ -32,6 +34,6 @@ ADD_EXTENTION(FILES "${HEADER_ONLY}" "${EXTENTIONS_HEADER_ONLY}")
 
 INIT_GUI_EXECUTABLE(${PROJECT_NAME} "${FILES}")
 
-set(QT5_PLUGINS Qt5::Widgets Qt5::Core Qt5::Network)
+set(QT5_PLUGINS Qt5::Widgets Qt5::Core Qt5::Network Qt5::WebEngineWidgets)
 
 SET_LIBS(${PROJECT_NAME} ${PROJECT_DIR}/bin "${QT5_PLUGINS}")
