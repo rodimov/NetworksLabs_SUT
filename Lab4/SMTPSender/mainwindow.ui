@@ -66,6 +66,13 @@
        </widget>
       </item>
       <item>
+       <widget class="QPushButton" name="reconnect">
+        <property name="text">
+         <string>Reconnect</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <spacer name="horizontalSpacer">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>

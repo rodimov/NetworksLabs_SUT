@@ -3,7 +3,6 @@
 
 #include <QSslSocket>
 #include <QFileDialog>
-#include <QMessageBox>
 #include <QCloseEvent>
 #include <QWebEngineView>
 #include <QUrl>
@@ -16,8 +15,10 @@ MainWindow::MainWindow(QWidget *parent)
 	ui->send->setFocus();
 
 	socket = new QSslSocket(this);
+	setSocketConnectState(true);
 
 	connect(socket, &QSslSocket::disconnected, this, &MainWindow::disconnected);
+	connect(ui->reconnect, &QPushButton::clicked, this, &MainWindow::connectToServer);
 }
 
 MainWindow::~MainWindow() {
@@ -29,11 +30,7 @@ void MainWindow::closeEvent(QCloseEvent* event) {
 		sendMessage("QUIT");
 
 		if (waitForResponse() && responseCode / 100 == 2) {
-			QMessageBox messageBox;
-			messageBox.setIcon(QMessageBox::Warning);
-			messageBox.setStandardButtons(QMessageBox::Ok);
-			messageBox.setText("Disconnected!");
-			messageBox.exec();
+			showMessageBox(responseText, QMessageBox::Information, true);
 		}
 
 		socket->disconnect();
@@ -43,6 +40,7 @@ void MainWindow::closeEvent(QCloseEvent* event) {
 }
 
 void MainWindow::connectToServer() {
+	setSocketConnectState(false);
 	socket->connectToHostEncrypted(ip, port);
 
 	waitForResponse();
@@ -59,21 +57,18 @@ void MainWindow::connectToServer() {
 	}
 
 	login();
+	setSocketConnectState(true);
 }
 
 void MainWindow::disconnected() {
-	
+	showMessageBox(QString("Disconnected!"), QMessageBox::Warning);
+	ui->send->setDisabled(true);
+	ui->reconnect->setDisabled(false);
 }
 
 void MainWindow::readyRead() {
 	QString reply = QString::fromUtf8(socket->readAll());
-	
-	QMessageBox* messageBox = new QMessageBox(this);
-	messageBox->setAttribute(Qt::WA_DeleteOnClose);
-	messageBox->setIcon(QMessageBox::Warning);
-	messageBox->setStandardButtons(QMessageBox::Ok);
-	messageBox->setText(reply);
-	messageBox->show();
+	showMessageBox(reply, QMessageBox::Warning, true);
 }
 
 bool MainWindow::waitForResponse() {
@@ -146,6 +141,9 @@ bool MainWindow::sendMessage(const QString& text) {
 }
 
 void MainWindow::login(bool isWebViewWasOpened) {
+	ui->send->setDisabled(true);
+	ui->reconnect->setDisabled(false);
+
 	sendMessage("AUTH LOGIN");
 	waitForResponse();
 
@@ -176,16 +174,14 @@ void MainWindow::login(bool isWebViewWasOpened) {
 		return;
 	}
 
-	QMessageBox* messageBox = new QMessageBox(this);
-	messageBox->setAttribute(Qt::WA_DeleteOnClose);
-	messageBox->setIcon(QMessageBox::Information);
-	messageBox->setStandardButtons(QMessageBox::Ok);
-	messageBox->setText(responseText);
-	messageBox->show();
+	showMessageBox(responseText, QMessageBox::Information);
+	ui->send->setDisabled(false);
+	ui->reconnect->setDisabled(true);
 }
 
 void MainWindow::openWebPage(QString& url) {
 	QDialog* webViewDialog = new QDialog(this);
+	webViewDialog->resize(800, 600);
 	QWebEngineView* webView = new QWebEngineView(webViewDialog);
 	webView->load(QUrl(url));
 	QHBoxLayout* layout = new QHBoxLayout(webViewDialog);
@@ -193,4 +189,26 @@ void MainWindow::openWebPage(QString& url) {
 	webViewDialog->setLayout(layout);
 	webViewDialog->setAttribute(Qt::WA_DeleteOnClose);
 	webViewDialog->exec();
+}
+
+void MainWindow::showMessageBox(QString& text, QMessageBox::Icon icon, bool isExec) {
+	QMessageBox* messageBox = new QMessageBox(this);
+	messageBox->setAttribute(Qt::WA_DeleteOnClose);
+	messageBox->setIcon(icon);
+	messageBox->setStandardButtons(QMessageBox::Ok);
+	messageBox->setText(text);
+	
+	if (isExec) {
+		messageBox->exec();
+	} else {
+		messageBox->show();
+	}
+}
+
+void MainWindow::setSocketConnectState(bool isConnected) {
+	if (isConnected) {
+		connect(socket, &QSslSocket::readyRead, this, &MainWindow::readyRead);
+	} else {
+		disconnect(socket, &QSslSocket::readyRead, this, &MainWindow::readyRead);
+	}
 }

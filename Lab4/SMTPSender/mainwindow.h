@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QMessageBox>
 
 class QSslSocket;
 
@@ -26,7 +27,6 @@ class MainWindow : public QMainWindow
 public:
 	MainWindow(QWidget* parent = nullptr);
 	~MainWindow();
-	void connectToServer();
 	void setPort(int port) { this->port = port; }
 	int getPort() { return port; }
 	void setIP(QString ip) { this->ip = ip; }
@@ -42,9 +42,14 @@ protected:
 private:
 	bool waitForResponse();
 	void showError(SmtpError error);
+	void showMessageBox(QString& text, QMessageBox::Icon icon, bool isExec = false);
 	bool sendMessage(const QString& text);
 	void login(bool isWebViewWasOpened = false);
 	void openWebPage(QString& url);
+	void setSocketConnectState(bool isConnected);
+
+public slots:
+	void connectToServer();
 
 private slots:
 	void disconnected();
