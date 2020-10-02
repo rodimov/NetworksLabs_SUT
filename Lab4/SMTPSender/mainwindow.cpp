@@ -31,6 +31,13 @@ MainWindow::MainWindow(QWidget* parent)
 	connect(ui->attach, &QPushButton::clicked, this, &MainWindow::attach);
 	connect(ui->bold, &QToolButton::clicked, this, &MainWindow::bold);
 	connect(ui->font, &QToolButton::clicked, this, &MainWindow::font);
+	connect(ui->color, &QToolButton::clicked, this, &MainWindow::color);
+	connect(ui->backgroundColor, &QToolButton::clicked,
+		this, &MainWindow::backgroundColor);
+	connect(ui->alignLeft, &QToolButton::clicked, this, &MainWindow::align);
+	connect(ui->alignCenter, &QToolButton::clicked, this, &MainWindow::align);
+	connect(ui->alignRight, &QToolButton::clicked, this, &MainWindow::align);
+	connect(ui->alignJustify, &QToolButton::clicked, this, &MainWindow::align);
 	connect(timer, &QTimer::timeout, this, &MainWindow::sendNoop);
 }
 
@@ -419,4 +426,40 @@ void MainWindow::font() {
 	}
 
 	ui->body->setCurrentFont(newFont);
+}
+
+void MainWindow::color() {
+	QColor currentColor = ui->body->textColor();
+	QColor newColor = QColorDialog::getColor(currentColor, this, "Select text color");
+	ui->body->setTextColor(newColor);
+}
+
+void MainWindow::backgroundColor() {
+	QColor currentColor = ui->body->textBackgroundColor();
+	QColor newColor = QColorDialog::getColor(currentColor, this,
+		"Select background text color");
+	ui->body->setTextBackgroundColor(newColor);
+}
+
+void MainWindow::align() {
+	QToolButton* button = static_cast<QToolButton*>(sender());
+
+	ui->alignLeft->setChecked(false);
+	ui->alignCenter->setChecked(false);
+	ui->alignRight->setChecked(false);
+	ui->alignJustify->setChecked(false);
+	
+	if (button == ui->alignLeft) {
+		ui->body->setAlignment(Qt::AlignLeft);
+		ui->alignLeft->setChecked(true);
+	} else if (button == ui->alignCenter) {
+		ui->body->setAlignment(Qt::AlignCenter);
+		ui->alignCenter->setChecked(true);
+	} else if (button == ui->alignRight) {
+		ui->body->setAlignment(Qt::AlignRight);
+		ui->alignRight->setChecked(true);
+	} else if (button == ui->alignJustify) {
+		ui->body->setAlignment(Qt::AlignJustify);
+		ui->alignJustify->setChecked(true);
+	}
 }

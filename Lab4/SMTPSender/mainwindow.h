@@ -64,6 +64,9 @@ private slots:
 	void sendNoop();
 	void bold();
 	void font();
+	void color();
+	void backgroundColor();
+	void align();
 
 private:
 	Ui::MainWindow* ui;
