@@ -5,6 +5,7 @@
 #include <QMessageBox>
 
 class QSslSocket;
+class QFile;
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -16,6 +17,8 @@ enum SmtpError
 	ResponseTimeoutError,
 	SendDataTimeoutError,
 	AuthenticationFailedError,
+	SendMailError,
+	NoopError,
 	ServerError,    // 4xx smtp error
 	ClientError     // 5xx smtp error
 };
@@ -42,11 +45,13 @@ protected:
 private:
 	bool waitForResponse();
 	void showError(SmtpError error);
-	void showMessageBox(QString& text, QMessageBox::Icon icon, bool isExec = false);
+	void showMessageBox(const QString& text, QMessageBox::Icon icon, bool isExec = false);
 	bool sendMessage(const QString& text);
 	void login(bool isWebViewWasOpened = false);
 	void openWebPage(QString& url);
 	void setSocketConnectState(bool isConnected);
+	QString createMIME();
+	QString toBase64(const QString& text);
 
 public slots:
 	void connectToServer();
@@ -54,6 +59,11 @@ public slots:
 private slots:
 	void disconnected();
 	void readyRead();
+	void sendMail();
+	void attach();
+	void sendNoop();
+	void bold();
+	void font();
 
 private:
 	Ui::MainWindow* ui;
@@ -63,9 +73,12 @@ private:
 	QString password;
 	QSslSocket* socket;
 	QString responseText;
+	QList<QFile*> files;
+	QTimer* timer;
 	int responseCode;
-	int connectionTimeout = 5000;
+	int sendMessageTimeout = 30000;
 	int responseTimeout = 5000;
-	int sendMessageTimeout = 60000;
+	int maxFileSize = 10485760;
+	int sendNoopInterval = 10000;
 };
 #endif // MAINWINDOW_H

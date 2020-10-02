@@ -6,8 +6,13 @@
 #include <QCloseEvent>
 #include <QWebEngineView>
 #include <QUrl>
+#include <QCryptographicHash>
+#include <QFile>
+#include <QTimer>
+#include <QFontDialog>
+#include <QColorDialog>
 
-MainWindow::MainWindow(QWidget *parent)
+MainWindow::MainWindow(QWidget* parent)
 	: QMainWindow(parent),
 	ui(new Ui::MainWindow) {
 	
@@ -17,8 +22,16 @@ MainWindow::MainWindow(QWidget *parent)
 	socket = new QSslSocket(this);
 	setSocketConnectState(true);
 
+	timer = new QTimer(this);
+	timer->setInterval(sendNoopInterval);
+
 	connect(socket, &QSslSocket::disconnected, this, &MainWindow::disconnected);
 	connect(ui->reconnect, &QPushButton::clicked, this, &MainWindow::connectToServer);
+	connect(ui->send, &QPushButton::clicked, this, &MainWindow::sendMail);
+	connect(ui->attach, &QPushButton::clicked, this, &MainWindow::attach);
+	connect(ui->bold, &QToolButton::clicked, this, &MainWindow::bold);
+	connect(ui->font, &QToolButton::clicked, this, &MainWindow::font);
+	connect(timer, &QTimer::timeout, this, &MainWindow::sendNoop);
 }
 
 MainWindow::~MainWindow() {
@@ -26,6 +39,7 @@ MainWindow::~MainWindow() {
 }
 
 void MainWindow::closeEvent(QCloseEvent* event) {
+	timer->stop();
 	if (socket->isOpen()) {
 		sendMessage("QUIT");
 
@@ -41,6 +55,7 @@ void MainWindow::closeEvent(QCloseEvent* event) {
 
 void MainWindow::connectToServer() {
 	setSocketConnectState(false);
+	timer->stop();
 	socket->connectToHostEncrypted(ip, port);
 
 	waitForResponse();
@@ -61,6 +76,7 @@ void MainWindow::connectToServer() {
 }
 
 void MainWindow::disconnected() {
+	timer->stop();
 	showMessageBox(QString("Disconnected!"), QMessageBox::Warning);
 	ui->send->setDisabled(true);
 	ui->reconnect->setDisabled(false);
@@ -114,6 +130,12 @@ void MainWindow::showError(SmtpError error) {
 		break;
 	case AuthenticationFailedError:
 		messageBox->setText("Authentication failed error");
+		break;
+	case SendMailError:
+		messageBox->setText("Send mail error");
+		break;
+	case NoopError:
+		messageBox->setText("Noop error");
 		break;
 	case ServerError:
 		messageBox->setText("Server error");
@@ -177,6 +199,7 @@ void MainWindow::login(bool isWebViewWasOpened) {
 	showMessageBox(responseText, QMessageBox::Information);
 	ui->send->setDisabled(false);
 	ui->reconnect->setDisabled(true);
+	timer->start();
 }
 
 void MainWindow::openWebPage(QString& url) {
@@ -191,7 +214,7 @@ void MainWindow::openWebPage(QString& url) {
 	webViewDialog->exec();
 }
 
-void MainWindow::showMessageBox(QString& text, QMessageBox::Icon icon, bool isExec) {
+void MainWindow::showMessageBox(const QString& text, QMessageBox::Icon icon, bool isExec) {
 	QMessageBox* messageBox = new QMessageBox(this);
 	messageBox->setAttribute(Qt::WA_DeleteOnClose);
 	messageBox->setIcon(icon);
@@ -211,4 +234,189 @@ void MainWindow::setSocketConnectState(bool isConnected) {
 	} else {
 		disconnect(socket, &QSslSocket::readyRead, this, &MainWindow::readyRead);
 	}
+}
+
+void MainWindow::sendMail() {
+	timer->stop();
+	setSocketConnectState(false);
+
+	QString sender = QByteArray::fromBase64(username.toUtf8());
+	sendMessage("MAIL FROM:<" + sender + ">");
+	waitForResponse();
+
+	if (responseCode != 250) {
+		showError(SendMailError);
+		return;
+	}
+
+	sendMessage("RCPT TO: " + ui->recipientAddress->text());
+	waitForResponse();
+
+	if (responseCode != 250) {
+		showError(SendMailError);
+		return;
+	}
+
+	sendMessage("DATA");
+	waitForResponse();
+
+	if (responseCode != 354) {
+		showError(SendMailError);
+		return;
+	}
+
+	sendMessage(createMIME());
+	sendMessage(".");
+	waitForResponse();
+
+	if (responseCode != 250) {
+		showError(SendMailError);
+		return;
+	}
+
+	showMessageBox("Done!", QMessageBox::Information);
+
+	setSocketConnectState(true);
+	files.clear();
+
+	for (auto file : files) {
+		delete file;
+	}
+
+	ui->name->clear();
+	ui->recipientAddress->clear();
+	ui->recipientName->clear();
+	ui->subject->clear();
+	ui->body->clear();
+	ui->attached->clear();
+
+	timer->start();
+}
+
+QString MainWindow::createMIME() {
+	QString mime = "From:";
+	QString senderName = ui->name->text();
+	QString senderAddress = QByteArray::fromBase64(username.toUtf8());
+
+	if (!senderName.isEmpty()) {
+		mime += " =?utf-8?B?" + toBase64(senderName) + "?=";
+	}
+
+	mime += " <" + senderAddress + ">\r\n";
+
+	mime += "To:";
+	QString recipientAddress = ui->recipientAddress->text();
+	QString recipientName = ui->recipientName->text();
+
+	if (!recipientName.isEmpty()) {
+		mime += " =?utf-8?B?" + toBase64(recipientName) + "?=";
+	}
+
+	mime += " <" + recipientAddress + ">\r\n";
+
+	QDateTime currentTime = QDateTime::currentDateTime();
+
+	mime += "Subject: ";
+	mime += "=?utf-8?B?" + toBase64(ui->subject->text()) + "?=\r\n";
+	mime += "MIME-Version: 1.0\r\n";
+	mime += QString("Date: %1\r\n").arg(currentTime.toString(Qt::RFC2822Date));
+
+	qsrand(currentTime.toSecsSinceEpoch());
+	QCryptographicHash md5(QCryptographicHash::Md5);
+	md5.addData(QByteArray().append(qrand()));
+	QString boundary = md5.result().toHex();
+
+	mime += "Content-Type: multipart/mixed; boundary=" + boundary + "\r\n";
+	
+	mime += "--" + boundary + "\r\n";
+	
+	mime += "Content-Type: text/html; charset=utf-8\r\n";
+	mime += "Content-Transfer-Encoding: 8bit\r\n";
+	mime += "\r\n";
+	mime += ui->body->toHtml();
+	mime += "\r\n";
+
+	mime += "--" + boundary + "\r\n";
+
+	for (auto file : files) {
+		QString fileName = QFileInfo(*file).fileName();
+
+		if (!file->open(QIODevice::ReadOnly)) {
+			showMessageBox("Can't open " + fileName, QMessageBox::Warning);
+			continue;
+		}
+
+		mime += "Content-Type: application/octet-stream; name=\"" + fileName +"\"\r\n";
+		mime += "Content-Transfer-Encoding: base64\r\n";
+		mime += "Content-disposition: attachment\r\n";
+		mime += "\r\n";
+		mime += file->readAll().toBase64();
+		mime += "\r\n";
+		mime += "\r\n";
+		mime += "--" + boundary + "\r\n";
+
+		file->close();
+	}
+
+	mime += "--" + boundary + "--\r\n";
+
+	return mime;
+}
+
+void MainWindow::attach() {
+	QString fileName = QFileDialog::getOpenFileName(this, tr("Open File"), "",
+		tr("All Files(*.*)"));
+
+	if (fileName.isEmpty()) {
+		return;
+	}
+
+	if (QFileInfo(QFile(fileName)).size() > maxFileSize) {
+		showMessageBox("File is too long", QMessageBox::Warning);
+		return;
+	}
+
+	QFile* file = new QFile(fileName, this);
+	files.push_back(file);
+
+	if (!ui->attached->text().isEmpty()) {
+		ui->attached->setText(ui->attached->text() + "; " + QFileInfo(*file).fileName());
+	} else {
+		ui->attached->setText(QFileInfo(*file).fileName());
+	}
+}
+
+QString MainWindow::toBase64(const QString& text) {
+	return QByteArray().append(text).toBase64();
+}
+
+void MainWindow::sendNoop() {
+	setSocketConnectState(false);
+
+	sendMessage("NOOP");
+	waitForResponse();
+
+	if (responseCode != 250) {
+		showError(NoopError);
+	}
+
+	setSocketConnectState(true);
+}
+
+void MainWindow::bold() {
+	QFont font(ui->body->currentFont());
+	font.setBold(ui->bold->isChecked());
+	ui->body->setCurrentFont(font);
+}
+
+void MainWindow::font() {
+	QFont font(ui->body->currentFont());
+	bool ok;
+	QFont newFont = QFontDialog::getFont(&ok, font, this);
+
+	if (!ok) {
+		return;
+	}
+
+	ui->body->setCurrentFont(newFont);
 }

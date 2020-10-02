@@ -30,7 +30,17 @@
       </widget>
      </item>
      <item>
-      <widget class="QLineEdit" name="port"/>
+      <widget class="QSpinBox" name="port">
+       <property name="minimum">
+        <number>1</number>
+       </property>
+       <property name="maximum">
+        <number>65535</number>
+       </property>
+       <property name="value">
+        <number>465</number>
+       </property>
+      </widget>
      </item>
     </layout>
    </item>

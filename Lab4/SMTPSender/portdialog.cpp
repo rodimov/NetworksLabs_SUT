@@ -18,7 +18,7 @@ PortDialog::~PortDialog() {
 }
 
 int PortDialog::getPort() {
-	return ui->port->text().toInt();
+	return ui->port->value();
 }
 
 QString PortDialog::getIP() {

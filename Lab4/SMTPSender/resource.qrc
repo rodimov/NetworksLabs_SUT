@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/">
+        <file>resources/bold.png</file>
+        <file>resources/font.png</file>
+    </qresource>
+</RCC>
