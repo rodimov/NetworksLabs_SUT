@@ -47,7 +47,7 @@ private:
 	void showError(SmtpError error);
 	void showMessageBox(const QString& text, QMessageBox::Icon icon, bool isExec = false);
 	bool sendMessage(const QString& text);
-	void login(bool isWebViewWasOpened = false);
+	void login();
 	void openWebPage(QString& url);
 	void setSocketConnectState(bool isConnected);
 	QString createMIME();
@@ -62,11 +62,6 @@ private slots:
 	void sendMail();
 	void attach();
 	void sendNoop();
-	void bold();
-	void font();
-	void color();
-	void backgroundColor();
-	void align();
 
 private:
 	Ui::MainWindow* ui;
@@ -76,9 +71,10 @@ private:
 	QString password;
 	QSslSocket* socket;
 	QString responseText;
+	QString okText = "+OK";
 	QList<QFile*> files;
 	QTimer* timer;
-	int responseCode;
+	bool isResponseOk;
 	int sendMessageTimeout = 30000;
 	int responseTimeout = 5000;
 	int maxFileSize = 10485760;

@@ -50,7 +50,7 @@ void MainWindow::closeEvent(QCloseEvent* event) {
 	if (socket->isOpen()) {
 		sendMessage("QUIT");
 
-		if (waitForResponse() && responseCode / 100 == 2) {
+		if (waitForResponse()) {
 			showMessageBox(responseText, QMessageBox::Information, true);
 		}
 
@@ -64,19 +64,6 @@ void MainWindow::connectToServer() {
 	setSocketConnectState(false);
 	timer->stop();
 	socket->connectToHostEncrypted(ip, port);
-
-	waitForResponse();
-
-	if (responseCode / 100 != 2) {
-		return;
-	}
-
-	sendMessage("EHLO QtMailer");
-	waitForResponse();
-
-	if (responseCode != 250) {
-		return;
-	}
 
 	login();
 	setSocketConnectState(true);
@@ -99,21 +86,13 @@ bool MainWindow::waitForResponse() {
 		showError(ResponseTimeoutError);
 
 		responseText = "";
-		responseCode = 0;
+		isResponseOk = false;
 
-		return false;
+		return isResponseOk;
 	}
 
 	responseText = QString::fromUtf8(socket->readAll());
-	responseCode = responseText.left(3).toInt();
-
-	if (responseCode / 100 == 4) {
-		showError(ServerError);
-	}
-
-	if (responseCode / 100 == 5) {
-		showError(ClientError);
-	}
+	isResponseOk = responseText.contains(okText);
 
 	return true;
 }
@@ -169,42 +148,27 @@ bool MainWindow::sendMessage(const QString& text) {
 	return true;
 }
 
-void MainWindow::login(bool isWebViewWasOpened) {
-	//ui->send->setDisabled(true);
+void MainWindow::login() {
 	ui->reconnect->setDisabled(false);
 
-	sendMessage("AUTH LOGIN");
+	sendMessage("USER " + username);
 	waitForResponse();
 
-	if (responseCode != 334) {
+	if (!isResponseOk) {
 		showError(AuthenticationFailedError);
 		return;
 	}
 
-	sendMessage(username);
+	sendMessage("PASS " + password);
 	waitForResponse();
 
-	if (responseCode != 334) {
+	if (!isResponseOk) {
 		showError(AuthenticationFailedError);
-		return;
-	}
-
-	sendMessage(password);
-	waitForResponse();
-
-	if (responseCode != 235 && (!responseText.contains("http") || isWebViewWasOpened)) {
-		showError(AuthenticationFailedError);
-		return;
-	} else if (responseText.contains("http") && !isWebViewWasOpened) {
-		int indexOfHttp = responseText.indexOf("http");
-		QString url = responseText.mid(indexOfHttp);
-		openWebPage(url);
-		login(true);
 		return;
 	}
 
 	showMessageBox(responseText, QMessageBox::Information);
-	//ui->send->setDisabled(false);
+
 	ui->reconnect->setDisabled(true);
 	timer->start();
 }
@@ -251,35 +215,35 @@ void MainWindow::sendMail() {
 	sendMessage("MAIL FROM:<" + sender + ">");
 	waitForResponse();
 
-	if (responseCode != 250) {
+	/*if (responseCode != 250) {
 		showError(SendMailError);
 		return;
-	}
+	}*/
 
 	//sendMessage("RCPT TO: " + ui->recipientAddress->text());
 	waitForResponse();
 
-	if (responseCode != 250) {
+	/*if (responseCode != 250) {
 		showError(SendMailError);
 		return;
-	}
+	}*/
 
 	sendMessage("DATA");
 	waitForResponse();
 
-	if (responseCode != 354) {
+	/*if (responseCode != 354) {
 		showError(SendMailError);
 		return;
-	}
+	}*/
 
 	sendMessage(createMIME());
 	sendMessage(".");
 	waitForResponse();
 
-	if (responseCode != 250) {
+	/*if (responseCode != 250) {
 		showError(SendMailError);
 		return;
-	}
+	}*/
 
 	showMessageBox("Done!", QMessageBox::Information);
 
@@ -403,63 +367,9 @@ void MainWindow::sendNoop() {
 	sendMessage("NOOP");
 	waitForResponse();
 
-	if (responseCode != 250) {
+	if (!isResponseOk) {
 		showError(NoopError);
 	}
 
 	setSocketConnectState(true);
-}
-
-void MainWindow::bold() {
-	/*QFont font(ui->body->currentFont());
-	font.setBold(ui->bold->isChecked());
-	ui->body->setCurrentFont(font);*/
-}
-
-void MainWindow::font() {
-	/*QFont font(ui->body->currentFont());
-	bool ok;
-	QFont newFont = QFontDialog::getFont(&ok, font, this);
-
-	if (!ok) {
-		return;
-	}
-
-	ui->body->setCurrentFont(newFont);*/
-}
-
-void MainWindow::color() {
-	/*QColor currentColor = ui->body->textColor();
-	QColor newColor = QColorDialog::getColor(currentColor, this, "Select text color");
-	ui->body->setTextColor(newColor);*/
-}
-
-void MainWindow::backgroundColor() {
-	/*QColor currentColor = ui->body->textBackgroundColor();
-	QColor newColor = QColorDialog::getColor(currentColor, this,
-		"Select background text color");
-	ui->body->setTextBackgroundColor(newColor);*/
-}
-
-void MainWindow::align() {
-	/*QToolButton* button = static_cast<QToolButton*>(sender());
-
-	ui->alignLeft->setChecked(false);
-	ui->alignCenter->setChecked(false);
-	ui->alignRight->setChecked(false);
-	ui->alignJustify->setChecked(false);
-	
-	if (button == ui->alignLeft) {
-		ui->body->setAlignment(Qt::AlignLeft);
-		ui->alignLeft->setChecked(true);
-	} else if (button == ui->alignCenter) {
-		ui->body->setAlignment(Qt::AlignCenter);
-		ui->alignCenter->setChecked(true);
-	} else if (button == ui->alignRight) {
-		ui->body->setAlignment(Qt::AlignRight);
-		ui->alignRight->setChecked(true);
-	} else if (button == ui->alignJustify) {
-		ui->body->setAlignment(Qt::AlignJustify);
-		ui->alignJustify->setChecked(true);
-	}*/
 }

@@ -26,9 +26,9 @@ QString PortDialog::getIP() {
 }
 
 QString PortDialog::getUsername() {
-	return QString::fromLatin1(ui->username->text().toLatin1().toBase64());
+	return ui->username->text();
 }
 
 QString PortDialog::getPassword() {
-	return QString::fromLatin1(ui->password->text().toLatin1().toBase64());
+	return ui->password->text();
 }
