@@ -29,6 +29,7 @@ add_subdirectory(Lab2/UDPClientFiles)
 add_subdirectory(Lab2/UDPServerFiles)
 add_subdirectory(Lab3/Base64)
 add_subdirectory(Lab4/SMTPSender)
+add_subdirectory(Lab5/POP3Receiver)
 
 if(APPLE)
 	return()

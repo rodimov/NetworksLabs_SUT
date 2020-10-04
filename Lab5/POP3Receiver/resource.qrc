@@ -1,0 +1,13 @@
+<RCC>
+    <qresource prefix="/">
+        <file>resources/bold.png</file>
+        <file>resources/font.png</file>
+		<file>resources/color.png</file>
+		<file>resources/bg_color.png</file>
+		<file>resources/alignLeft.png</file>
+		<file>resources/alignCenter.png</file>
+		<file>resources/alignRight.png</file>
+		<file>resources/alignJustify.png</file>
+		<file>resources/refresh.png</file>
+    </qresource>
+</RCC>
