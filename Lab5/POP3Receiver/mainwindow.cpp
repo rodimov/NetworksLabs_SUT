@@ -34,6 +34,9 @@ MainWindow::MainWindow(QWidget* parent)
 
 	ui->previous->setEnabled(false);
 
+	webPage = new WebPage(this);
+	ui->messageText->setPage(webPage);
+
 	connect(socket, &QSslSocket::disconnected, this, &MainWindow::disconnected);
 	connect(ui->messages, &QListWidget::currentItemChanged, this, &MainWindow::messageChanged);
 	connect(ui->attachSave, &QPushButton::clicked, this, &MainWindow::saveAttachment);
@@ -291,7 +294,7 @@ void MainWindow::getMessagesIndexes() {
 void MainWindow::getMessages() {
 	setSocketConnectState(false);
 	ui->messages->clear();
-	ui->messageText->setUrl(QUrl());
+	webPage->setUrl(QUrl());
 	ui->senderAddress->clear();
 	ui->senderName->clear();
 	ui->attached->clear();
@@ -412,7 +415,7 @@ Message* MainWindow::parseMIME(QString& mime) {
 }
 
 void MainWindow::messageChanged(QListWidgetItem* current, QListWidgetItem* previous) {
-	ui->messageText->setUrl(QUrl());
+	webPage->setUrl(QUrl());
 	ui->senderAddress->clear();
 	ui->senderName->clear();
 	ui->attached->clear();
@@ -443,13 +446,13 @@ void MainWindow::messageChanged(QListWidgetItem* current, QListWidgetItem* previ
 	}
 
 	if (!message->html.isEmpty()) {
-		ui->messageText->setHtml(message->html);
+		webPage->setHtml(message->html);
 	} else {
 		QTextEdit textEdit;
 		textEdit.setPlainText(message->text);
 		QString textHtml = textEdit.toHtml();
 
-		ui->messageText->setHtml(textHtml);
+		webPage->setHtml(textHtml);
 	}
 
 	for (auto file : message->files.keys()) {

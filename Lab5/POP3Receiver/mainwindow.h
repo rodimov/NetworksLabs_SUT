@@ -4,10 +4,13 @@
 #include <QApplication>
 #include <QMainWindow>
 #include <QMessageBox>
+#include <QWebEnginePage>
+#include <QDesktopServices>
 
 class QSslSocket;
 class QFile;
 class QListWidgetItem;
+class WebPage;
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -101,10 +104,31 @@ private:
 	QList<Message*> messagesList;
 	QList<int> messageIndexes;
 	QStringList filesTypes = { "application",  "audio", "example", "image", "model", "video" };
+	WebPage* webPage;
 	bool isResponseOk;
 	int sendMessageTimeout = 5000;
 	int responseTimeout = 5000;
 	int pageSize = 25;
 	int startPage = 0;
 };
+
+class WebPage : public QWebEnginePage {
+	Q_OBJECT
+
+public:
+	WebPage(QObject* parent = nullptr) : QWebEnginePage(parent) {}
+	~WebPage() {}
+
+	bool WebPage::acceptNavigationRequest(const QUrl& url, NavigationType type, bool isMainFrame)
+	{
+		if (type == QWebEnginePage::NavigationTypeLinkClicked)
+		{
+			QDesktopServices::openUrl(url);
+			return false;
+		}
+
+		return true;
+	}
+};
+
 #endif // MAINWINDOW_H
