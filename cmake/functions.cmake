@@ -1,8 +1,10 @@
 function(COPY_FILES SOURCE_DIR FILES DEST_DIR)
 	foreach(FILE ${FILES})
-		message(STATUS "Copying ${FILE} to ${DEST_DIR}")
-		file(COPY ${SOURCE_DIR}/${FILE}
-			DESTINATION ${DEST_DIR})
+		if (EXISTS ${SOURCE_DIR}/${FILE})
+			message(STATUS "Copying ${FILE} to ${DEST_DIR}")
+			file(COPY ${SOURCE_DIR}/${FILE}
+				DESTINATION ${DEST_DIR})
+		endif()
 	endforeach()
 endfunction()
 

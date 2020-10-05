@@ -12,6 +12,9 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
+
 find_package(Qt5 COMPONENTS Core Widgets Network WebEngineWidgets REQUIRED)
 
 include(../../cmake/functions.cmake)
@@ -34,7 +37,17 @@ ADD_EXTENTION(FILES "${HEADER_ONLY}" "${EXTENTIONS_HEADER_ONLY}")
 set(FILES "${FILES}" resource.qrc)
 
 INIT_GUI_EXECUTABLE(${PROJECT_NAME} "${FILES}")
+target_include_directories(${PROJECT_NAME} PRIVATE C:/Users/Artyom/Downloads/mimetic-0.9.8/mimetic-0.9.8)
+#target_link_libraries(${PROJECT_NAME} C:/Users/Artyom/Downloads/mimetic-0.9.8/mimetic-0.9.8/win32/libmimetic_mt.lib)
 
-set(QT5_PLUGINS Qt5::Widgets Qt5::Core Qt5::Network Qt5::WebEngineWidgets)
+set(QT5_PLUGINS Qt5::Widgets Qt5::Core Qt5::Network Qt5::WebEngineWidgets C:/Users/Artyom/Downloads/mimetic-0.9.8/mimetic-0.9.8/win32/libmimetic_mt.lib)
+set(QT5_PLUGINSD Qt5::Widgets Qt5::Core Qt5::Network Qt5::WebEngineWidgets C:/Users/Artyom/Downloads/mimetic-0.9.8/mimetic-0.9.8/win32/libmimetic_mtd.lib)
 
-SET_LIBS(${PROJECT_NAME} ${PROJECT_DIR}/bin "${QT5_PLUGINS}")
+#SET_LIBS(${PROJECT_NAME} ${PROJECT_DIR}/bin "${QT5_PLUGINS}")
+
+target_link_libraries(${PROJECT_NAME} debug "${QT5_PLUGINSD}" optimized "${QT5_PLUGINS}")
+
+set_target_properties(${PROJECT_NAME}
+	PROPERTIES
+	RUNTIME_OUTPUT_DIRECTORY ${PROJECT_DIR}/bin
+)

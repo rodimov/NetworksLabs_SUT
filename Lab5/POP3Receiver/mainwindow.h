@@ -1,11 +1,13 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include <QApplication>
 #include <QMainWindow>
 #include <QMessageBox>
 
 class QSslSocket;
 class QFile;
+class QListWidgetItem;
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -21,6 +23,22 @@ enum SmtpError
 	NoopError,
 	ServerError,    // 4xx smtp error
 	ClientError     // 5xx smtp error
+};
+
+class OverrideCursor {
+public:
+	OverrideCursor() { QApplication::setOverrideCursor(Qt::WaitCursor); };
+	~OverrideCursor() { QApplication::restoreOverrideCursor(); };
+};
+
+struct Message
+{
+	QString subject;
+	QHash<QString, QString> senders;
+	QString text;
+	QString html;
+	QHash<QString, QByteArray> files;
+	int messageIndex;
 };
 
 class MainWindow : public QMainWindow
@@ -43,14 +61,17 @@ protected:
 	void closeEvent(QCloseEvent* event);
 
 private:
-	bool waitForResponse();
+	bool waitForResponse(bool isShowError = true);
+	bool waitForLineResponse(bool isShowError = true);
+	QString getLongResponse();
 	void showError(SmtpError error);
 	void showMessageBox(const QString& text, QMessageBox::Icon icon, bool isExec = false);
-	bool sendMessage(const QString& text);
+	bool sendMessage(const QString& text, bool isShowError = true);
 	void login();
-	void openWebPage(QString& url);
+	Message* parseMIME(QString& mime);
+	void encodeBase64(QString& data);
+	void encodeBase64List(QString& data);
 	void setSocketConnectState(bool isConnected);
-	QString createMIME();
 	QString toBase64(const QString& text);
 
 public slots:
@@ -59,9 +80,14 @@ public slots:
 private slots:
 	void disconnected();
 	void readyRead();
-	void sendMail();
-	void attach();
-	void sendNoop();
+	void getMessagesIndexes();
+	void getMessages();
+	void messageChanged(QListWidgetItem* current, QListWidgetItem* previous);
+	void saveAttachment();
+	void refresh();
+	void previous();
+	void next();
+	void remove();
 
 private:
 	Ui::MainWindow* ui;
@@ -72,12 +98,13 @@ private:
 	QSslSocket* socket;
 	QString responseText;
 	QString okText = "+OK";
-	QList<QFile*> files;
-	QTimer* timer;
+	QList<Message*> messagesList;
+	QList<int> messageIndexes;
+	QStringList filesTypes = { "application",  "audio", "example", "image", "model", "video" };
 	bool isResponseOk;
-	int sendMessageTimeout = 30000;
+	int sendMessageTimeout = 5000;
 	int responseTimeout = 5000;
-	int maxFileSize = 10485760;
-	int sendNoopInterval = 10000;
+	int pageSize = 3;
+	int startPage = 0;
 };
 #endif // MAINWINDOW_H
