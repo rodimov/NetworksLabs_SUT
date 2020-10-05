@@ -1,5 +1,5 @@
-#include "mainwindow.h"
-#include "./ui_mainwindow.h"
+#include "mailer.h"
+#include "./ui_mailer.h"
 
 #include <QSslSocket>
 #include <QFileDialog>
@@ -16,9 +16,9 @@
 
 #include <mimetic/mimetic.h>
 
-MainWindow::MainWindow(QWidget* parent)
+Mailer::Mailer(QWidget* parent)
 	: QMainWindow(parent),
-	ui(new Ui::MainWindow) {
+	ui(new Ui::Mailer) {
 	
 	ui->setupUi(this);
 
@@ -37,20 +37,21 @@ MainWindow::MainWindow(QWidget* parent)
 	webPage = new WebPage(this);
 	ui->messageText->setPage(webPage);
 
-	connect(socket, &QSslSocket::disconnected, this, &MainWindow::disconnected);
-	connect(ui->messages, &QListWidget::currentItemChanged, this, &MainWindow::messageChanged);
-	connect(ui->attachSave, &QPushButton::clicked, this, &MainWindow::saveAttachment);
-	connect(ui->refresh, &QToolButton::clicked, this, &MainWindow::refresh);
-	connect(ui->previous, &QToolButton::clicked, this, &MainWindow::previous);
-	connect(ui->next, &QToolButton::clicked, this, &MainWindow::next);
-	connect(ui->remove, &QToolButton::clicked, this, &MainWindow::remove);
+	connect(socket, &QSslSocket::disconnected, this, &Mailer::disconnected);
+	connect(ui->messages, &QListWidget::currentItemChanged, this, &Mailer::messageChanged);
+	connect(ui->attachSave, &QPushButton::clicked, this, &Mailer::saveAttachment);
+	connect(ui->refresh, &QToolButton::clicked, this, &Mailer::refresh);
+	connect(ui->previous, &QToolButton::clicked, this, &Mailer::previous);
+	connect(ui->next, &QToolButton::clicked, this, &Mailer::next);
+	connect(ui->remove, &QToolButton::clicked, this, &Mailer::remove);
+	connect(ui->send, &QToolButton::clicked, this, &Mailer::send);
 }
 
-MainWindow::~MainWindow() {
+Mailer::~Mailer() {
 	delete ui;
 }
 
-void MainWindow::closeEvent(QCloseEvent* event) {
+void Mailer::closeEvent(QCloseEvent* event) {
 	setSocketConnectState(false);
 
 	if (socket->isOpen()) {
@@ -66,9 +67,9 @@ void MainWindow::closeEvent(QCloseEvent* event) {
 	event->accept();
 }
 
-void MainWindow::connectToServer() {
+void Mailer::connectToServer() {
 	setSocketConnectState(false);
-	socket->connectToHostEncrypted(ip, port);
+	socket->connectToHostEncrypted(popAddress, popPort);
 
 	login();
 	getMessagesIndexes();
@@ -77,16 +78,16 @@ void MainWindow::connectToServer() {
 	setSocketConnectState(true);
 }
 
-void MainWindow::disconnected() {
+void Mailer::disconnected() {
 	showMessageBox(QString("Disconnected!"), QMessageBox::Warning);
 }
 
-void MainWindow::readyRead() {
+void Mailer::readyRead() {
 	QString reply = QString::fromUtf8(socket->readAll());
 	showMessageBox(reply, QMessageBox::Warning, true);
 }
 
-bool MainWindow::waitForResponse(bool isShowError) {
+bool Mailer::waitForResponse(bool isShowError) {
 	if (!socket->waitForReadyRead(responseTimeout)) {
 		if (isShowError) {
 			showError(ResponseTimeoutError);
@@ -104,7 +105,7 @@ bool MainWindow::waitForResponse(bool isShowError) {
 	return true;
 }
 
-bool MainWindow::waitForLineResponse(bool isShowError) {
+bool Mailer::waitForLineResponse(bool isShowError) {
 	if (!socket->canReadLine() && !socket->waitForReadyRead(responseTimeout)) {
 		if (isShowError) {
 			showError(ResponseTimeoutError);
@@ -122,7 +123,7 @@ bool MainWindow::waitForLineResponse(bool isShowError) {
 	return true;
 }
 
-void MainWindow::showError(PopError error) {
+void Mailer::showError(ConnectionError error) {
 	QMessageBox* messageBox = new QMessageBox(this);
 	messageBox->setAttribute(Qt::WA_DeleteOnClose);
 	messageBox->setIcon(QMessageBox::Warning);
@@ -161,7 +162,7 @@ void MainWindow::showError(PopError error) {
 	messageBox->show();
 }
 
-bool MainWindow::sendMessage(const QString& text, bool isShowError) {
+bool Mailer::sendMessage(const QString& text, bool isShowError) {
 	socket->write(text.toUtf8() + "\r\n");
 	
 	if (!socket->waitForBytesWritten(sendMessageTimeout))
@@ -175,8 +176,8 @@ bool MainWindow::sendMessage(const QString& text, bool isShowError) {
 	return true;
 }
 
-void MainWindow::login() {
-	sendMessage("USER " + username, false);
+void Mailer::login() {
+	sendMessage("USER " + username.left(username.indexOf("@")), false);
 	waitForResponse();
 
 	if (!isResponseOk) {
@@ -203,7 +204,7 @@ void MainWindow::login() {
 	}
 }
 
-void MainWindow::refresh() {
+void Mailer::refresh() {
 	setSocketConnectState(false);
 
 	startPage = 0;
@@ -217,7 +218,7 @@ void MainWindow::refresh() {
 	setSocketConnectState(true);
 }
 
-void MainWindow::previous() {
+void Mailer::previous() {
 	startPage -= pageSize;
 
 	if (startPage <= 0) {
@@ -227,7 +228,7 @@ void MainWindow::previous() {
 	getMessages();
 }
 
-void MainWindow::next() {
+void Mailer::next() {
 	startPage += pageSize;
 
 	if (startPage >= pageSize) {
@@ -237,7 +238,7 @@ void MainWindow::next() {
 	getMessages();
 }
 
-void MainWindow::showMessageBox(const QString& text, QMessageBox::Icon icon, bool isExec) {
+void Mailer::showMessageBox(const QString& text, QMessageBox::Icon icon, bool isExec) {
 	if (text.isEmpty()) {
 		return;
 	}
@@ -259,15 +260,15 @@ void MainWindow::showMessageBox(const QString& text, QMessageBox::Icon icon, boo
 	}
 }
 
-void MainWindow::setSocketConnectState(bool isConnected) {
+void Mailer::setSocketConnectState(bool isConnected) {
 	if (isConnected) {
-		connect(socket, &QSslSocket::readyRead, this, &MainWindow::readyRead);
+		connect(socket, &QSslSocket::readyRead, this, &Mailer::readyRead);
 	} else {
-		disconnect(socket, &QSslSocket::readyRead, this, &MainWindow::readyRead);
+		disconnect(socket, &QSslSocket::readyRead, this, &Mailer::readyRead);
 	}
 }
 
-void MainWindow::getMessagesIndexes() {
+void Mailer::getMessagesIndexes() {
 	setSocketConnectState(false);
 	messageIndexes.clear();
 
@@ -291,7 +292,7 @@ void MainWindow::getMessagesIndexes() {
 	setSocketConnectState(true);
 }
 
-void MainWindow::getMessages() {
+void Mailer::getMessages() {
 	setSocketConnectState(false);
 	ui->messages->clear();
 	webPage->setUrl(QUrl());
@@ -341,7 +342,7 @@ void MainWindow::getMessages() {
 	setSocketConnectState(true);
 }
 
-QString MainWindow::getLongResponse() {
+QString Mailer::getLongResponse() {
 	QString longResponse;
 	responseText = "";
 
@@ -357,7 +358,7 @@ QString MainWindow::getLongResponse() {
 	return longResponse;
 }
 
-Message* MainWindow::parseMIME(QString& mime) {
+Message* Mailer::parseMIME(QString& mime) {
 	Message* message = new Message;
 	std::string stdData = mime.toStdString();
 	std::istringstream stringStream(stdData);
@@ -414,7 +415,7 @@ Message* MainWindow::parseMIME(QString& mime) {
 	return message;
 }
 
-void MainWindow::messageChanged(QListWidgetItem* current, QListWidgetItem* previous) {
+void Mailer::messageChanged(QListWidgetItem* current, QListWidgetItem* previous) {
 	webPage->setUrl(QUrl());
 	ui->senderAddress->clear();
 	ui->senderName->clear();
@@ -465,7 +466,7 @@ void MainWindow::messageChanged(QListWidgetItem* current, QListWidgetItem* previ
 	}
 }
 
-void MainWindow::remove() {
+void Mailer::remove() {
 	setSocketConnectState(false);
 
 	int index = ui->messages->currentRow();
@@ -500,7 +501,7 @@ void MainWindow::remove() {
 	setSocketConnectState(true);
 }
 
-void MainWindow::encodeBase64(QString& data) {
+void Mailer::encodeBase64(QString& data) {
 	QString base64start = "=?utf-8?b?";
 	QString base64end = "?=";
 
@@ -519,7 +520,7 @@ void MainWindow::encodeBase64(QString& data) {
 	}
 }
 
-void MainWindow::encodeBase64List(QString& data) {
+void Mailer::encodeBase64List(QString& data) {
 	QString base64start = "=?utf-8?b?";
 	QString base64end = "?=";
 
@@ -540,7 +541,7 @@ void MainWindow::encodeBase64List(QString& data) {
 	data.simplified();
 }
 
-void MainWindow::saveAttachment() {
+void Mailer::saveAttachment() {
 	int index = ui->messages->currentRow();
 
 	if (messagesList.size() < index || index < 0) {
@@ -580,6 +581,22 @@ void MainWindow::saveAttachment() {
 	}
 }
 
-QString MainWindow::toBase64(const QString& text) {
+QString Mailer::toBase64(const QString& text) {
 	return QByteArray().append(text).toBase64();
+}
+
+void Mailer::send() {
+	if (mailSender) {
+		mailSender->close();
+		delete mailSender;
+		mailSender = nullptr;
+	}
+
+	mailSender = new MailSender(this);
+	mailSender->setPort(smtpPort);
+	mailSender->setIP(smtpAddress);
+	mailSender->setUsername(toBase64(username));
+	mailSender->setPassword(toBase64(password));
+	mailSender->show();
+	mailSender->connectToServer();
 }

@@ -1,5 +1,5 @@
-#ifndef MAINWINDOW_H
-#define MAINWINDOW_H
+#ifndef MAILER_H
+#define MAILER_H
 
 #include <QApplication>
 #include <QMainWindow>
@@ -7,26 +7,16 @@
 #include <QWebEnginePage>
 #include <QDesktopServices>
 
+#include "mailsender.h"
+
 class QSslSocket;
 class QFile;
 class QListWidgetItem;
 class WebPage;
 
 QT_BEGIN_NAMESPACE
-namespace Ui { class MainWindow; }
+namespace Ui { class Mailer; }
 QT_END_NAMESPACE
-
-enum PopError
-{
-	ConnectionTimeoutError,
-	ResponseTimeoutError,
-	SendDataTimeoutError,
-	AuthenticationFailedError,
-	SendMailError,
-	NoopError,
-	ServerError,    // 4xx smtp error
-	ClientError     // 5xx smtp error
-};
 
 class OverrideCursor {
 public:
@@ -44,17 +34,21 @@ struct Message
 	int messageIndex;
 };
 
-class MainWindow : public QMainWindow
+class Mailer : public QMainWindow
 {
 	Q_OBJECT
 
 public:
-	MainWindow(QWidget* parent = nullptr);
-	~MainWindow();
-	void setPort(int port) { this->port = port; }
-	int getPort() { return port; }
-	void setIP(QString ip) { this->ip = ip; }
-	QString getIP() { return ip; }
+	Mailer(QWidget* parent = nullptr);
+	~Mailer();
+	void setPOPPort(int port) { popPort = port; }
+	int getPOPPort() { return popPort; }
+	void setPOPAddress(QString address) { popAddress = address; }
+	QString getPOPAddress() { return popAddress; }
+	void setSMTPPort(int port) { smtpPort = port; }
+	int getSMTPPort() { return smtpPort; }
+	void setSMTPAddress(QString address) { smtpAddress = address; }
+	QString getSMTPAddress() { return smtpAddress; }
 	void setUsername(QString username) { this->username = username; }
 	QString getUsername() { return username; }
 	void setPassword(QString password) { this->password = password; }
@@ -67,7 +61,7 @@ private:
 	bool waitForResponse(bool isShowError = true);
 	bool waitForLineResponse(bool isShowError = true);
 	QString getLongResponse();
-	void showError(PopError error);
+	void showError(ConnectionError error);
 	void showMessageBox(const QString& text, QMessageBox::Icon icon, bool isExec = false);
 	bool sendMessage(const QString& text, bool isShowError = true);
 	void login();
@@ -91,11 +85,14 @@ private slots:
 	void previous();
 	void next();
 	void remove();
+	void send();
 
 private:
-	Ui::MainWindow* ui;
-	int port = 0;
-	QString ip;
+	Ui::Mailer* ui;
+	int popPort = 0;
+	QString popAddress;
+	int smtpPort = 0;
+	QString smtpAddress;
 	QString username;
 	QString password;
 	QSslSocket* socket;
@@ -105,6 +102,7 @@ private:
 	QList<int> messageIndexes;
 	QStringList filesTypes = { "application",  "audio", "example", "image", "model", "video" };
 	WebPage* webPage;
+	MailSender* mailSender = nullptr;
 	bool isResponseOk;
 	int sendMessageTimeout = 5000;
 	int responseTimeout = 5000;
@@ -131,4 +129,4 @@ public:
 	}
 };
 
-#endif // MAINWINDOW_H
+#endif // MAILER_H

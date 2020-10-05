@@ -1,0 +1,87 @@
+#ifndef MAILSENDER_H
+#define MAILSENDER_H
+
+#include <QMainWindow>
+#include <QMessageBox>
+
+class QSslSocket;
+class QFile;
+
+QT_BEGIN_NAMESPACE
+namespace Ui { class MailSender; }
+QT_END_NAMESPACE
+
+enum ConnectionError
+{
+	ConnectionTimeoutError,
+	ResponseTimeoutError,
+	SendDataTimeoutError,
+	AuthenticationFailedError,
+	SendMailError,
+	NoopError,
+	ServerError,    // 4xx smtp error
+	ClientError     // 5xx smtp error
+};
+
+class MailSender : public QMainWindow
+{
+	Q_OBJECT
+
+public:
+	MailSender(QWidget* parent = nullptr);
+	~MailSender();
+	void setPort(int port) { this->port = port; }
+	int getPort() { return port; }
+	void setIP(QString ip) { this->ip = ip; }
+	QString getIP() { return ip; }
+	void setUsername(QString username) { this->username = username; }
+	QString getUsername() { return username; }
+	void setPassword(QString password) { this->password = password; }
+	QString getPassword() { return password; }
+
+protected:
+	void closeEvent(QCloseEvent* event);
+
+private:
+	bool waitForResponse();
+	void showError(ConnectionError error);
+	void showMessageBox(const QString& text, QMessageBox::Icon icon, bool isExec = false);
+	bool sendMessage(const QString& text);
+	void login(bool isWebViewWasOpened = false);
+	void openWebPage(QString& url);
+	void setSocketConnectState(bool isConnected);
+	QString createMIME();
+	QString toBase64(const QString& text);
+
+public slots:
+	void connectToServer();
+
+private slots:
+	void disconnected();
+	void readyRead();
+	void sendMail();
+	void attach();
+	void sendNoop();
+	void bold();
+	void font();
+	void color();
+	void backgroundColor();
+	void align();
+
+private:
+	Ui::MailSender* ui;
+	int port = 0;
+	QString ip;
+	QString username;
+	QString password;
+	QSslSocket* socket;
+	QString responseText;
+	QList<QFile*> files;
+	QTimer* timer;
+	int responseCode;
+	int sendMessageTimeout = 30000;
+	int responseTimeout = 5000;
+	int maxFileSize = 10485760;
+	int sendNoopInterval = 10000;
+};
+#endif // MAILSENDER_H

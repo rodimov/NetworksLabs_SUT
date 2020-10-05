@@ -30,6 +30,7 @@ add_subdirectory(Lab2/UDPServerFiles)
 add_subdirectory(Lab3/Base64)
 add_subdirectory(Lab4/SMTPSender)
 add_subdirectory(Lab5/POP3Receiver)
+add_subdirectory(kurs/Mailer)
 
 if(APPLE)
 	return()
