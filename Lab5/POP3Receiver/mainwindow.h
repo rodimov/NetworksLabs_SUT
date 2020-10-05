@@ -104,7 +104,7 @@ private:
 	bool isResponseOk;
 	int sendMessageTimeout = 5000;
 	int responseTimeout = 5000;
-	int pageSize = 3;
+	int pageSize = 25;
 	int startPage = 0;
 };
 #endif // MAINWINDOW_H

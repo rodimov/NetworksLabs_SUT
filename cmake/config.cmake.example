@@ -1,6 +1,7 @@
 set(PROJECT_DIR path/to/current_project)
 set(QT5_LOCATION path/to/qt_dir)
 set(OPENSSL_LOCATION path/to/OpenSSL)
+set(MIMETIC_LOCATION path/to//mimetic)
 set(QT5_LIBS Qt5Concurrent Qt5Core Qt5Gui Qt5Help Qt5Location Qt5Multimedia Qt5MultimediaWidgets
 	Qt5Network Qt5Scxml Qt5Svg Qt5Test Qt5WebChannel Qt5WebEngine Qt5WebEngineCore Qt5WebEngineWidgets
 	Qt5WebSockets Qt5WebView Qt5Widgets Qt5WinExtras Qt5Xml Qt5XmlPatterns Qt5Quick Qt5PrintSupport

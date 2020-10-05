@@ -40,6 +40,7 @@ MainWindow::MainWindow(QWidget* parent)
 	connect(ui->refresh, &QToolButton::clicked, this, &MainWindow::refresh);
 	connect(ui->previous, &QToolButton::clicked, this, &MainWindow::previous);
 	connect(ui->next, &QToolButton::clicked, this, &MainWindow::next);
+	connect(ui->remove, &QToolButton::clicked, this, &MainWindow::remove);
 }
 
 MainWindow::~MainWindow() {
@@ -202,10 +203,11 @@ void MainWindow::login() {
 void MainWindow::refresh() {
 	setSocketConnectState(false);
 
-	startPage = 1;
+	startPage = 0;
 	ui->previous->setEnabled(false);
-	sendMessage("QUIT");
-	waitForResponse();
+	sendMessage("QUIT", false);
+	waitForResponse(false);
+	socket->disconnect();
 
 	connectToServer();
 
@@ -461,6 +463,8 @@ void MainWindow::messageChanged(QListWidgetItem* current, QListWidgetItem* previ
 }
 
 void MainWindow::remove() {
+	setSocketConnectState(false);
+
 	int index = ui->messages->currentRow();
 
 	if (messagesList.size() < index || index < 0) {
@@ -469,7 +473,28 @@ void MainWindow::remove() {
 
 	Message* message = messagesList[index];
 
+	sendMessage("DELE " + QString::number(message->messageIndex));
+	waitForResponse();
 
+	if (!isResponseOk) {
+		return;
+	}
+
+	showMessageBox(responseText, QMessageBox::Warning);
+
+	messageIndexes.removeAll(message->messageIndex);
+	
+	if (messagesList.size() == 1 && startPage != 0) {
+		startPage -= pageSize;
+
+		if (startPage <= 0) {
+			ui->previous->setEnabled(false);
+		}
+	}
+
+	getMessages();
+
+	setSocketConnectState(true);
 }
 
 void MainWindow::encodeBase64(QString& data) {

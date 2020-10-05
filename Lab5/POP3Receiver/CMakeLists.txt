@@ -37,13 +37,10 @@ ADD_EXTENTION(FILES "${HEADER_ONLY}" "${EXTENTIONS_HEADER_ONLY}")
 set(FILES "${FILES}" resource.qrc)
 
 INIT_GUI_EXECUTABLE(${PROJECT_NAME} "${FILES}")
-target_include_directories(${PROJECT_NAME} PRIVATE C:/Users/Artyom/Downloads/mimetic-0.9.8/mimetic-0.9.8)
-#target_link_libraries(${PROJECT_NAME} C:/Users/Artyom/Downloads/mimetic-0.9.8/mimetic-0.9.8/win32/libmimetic_mt.lib)
+target_include_directories(${PROJECT_NAME} PRIVATE ${MIMETIC_LOCATION})
 
-set(QT5_PLUGINS Qt5::Widgets Qt5::Core Qt5::Network Qt5::WebEngineWidgets C:/Users/Artyom/Downloads/mimetic-0.9.8/mimetic-0.9.8/win32/libmimetic_mt.lib)
-set(QT5_PLUGINSD Qt5::Widgets Qt5::Core Qt5::Network Qt5::WebEngineWidgets C:/Users/Artyom/Downloads/mimetic-0.9.8/mimetic-0.9.8/win32/libmimetic_mtd.lib)
-
-#SET_LIBS(${PROJECT_NAME} ${PROJECT_DIR}/bin "${QT5_PLUGINS}")
+set(QT5_PLUGINS Qt5::Widgets Qt5::Core Qt5::Network Qt5::WebEngineWidgets ${MIMETIC_LOCATION}/win32/libmimetic_mt.lib)
+set(QT5_PLUGINSD Qt5::Widgets Qt5::Core Qt5::Network Qt5::WebEngineWidgets ${MIMETIC_LOCATION}/libmimetic_mtd.lib)
 
 target_link_libraries(${PROJECT_NAME} debug "${QT5_PLUGINSD}" optimized "${QT5_PLUGINS}")
 

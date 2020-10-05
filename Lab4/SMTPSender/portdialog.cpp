@@ -8,7 +8,7 @@ PortDialog::PortDialog(QWidget* parent)
 	ui->setupUi(this);
 
 	setFixedSize(width(), height());
-	ui->port->setFocus();
+	ui->ip->setFocus();
 
 	connect(ui->ok, &QPushButton::clicked, this, &PortDialog::accept);
 }

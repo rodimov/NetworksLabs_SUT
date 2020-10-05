@@ -8,11 +8,7 @@ PortDialog::PortDialog(QWidget* parent)
 	ui->setupUi(this);
 
 	setFixedSize(width(), height());
-	ui->port->setFocus();
-
-	ui->ip->setText("pop.mail.ru");
-	ui->username->setText("mailtester.2020");
-	ui->password->setText("Zxcvbnm1+");
+	ui->ip->setFocus();
 
 	connect(ui->ok, &QPushButton::clicked, this, &PortDialog::accept);
 }
