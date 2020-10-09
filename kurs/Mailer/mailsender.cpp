@@ -11,6 +11,8 @@
 #include <QTimer>
 #include <QFontDialog>
 #include <QColorDialog>
+#include <QDragEnterEvent>
+#include <QMimeData>
 
 MailSender::MailSender(QWidget* parent)
 	: QMainWindow(parent),
@@ -18,6 +20,7 @@ MailSender::MailSender(QWidget* parent)
 	
 	ui->setupUi(this);
 	ui->send->setFocus();
+	setAcceptDrops(true);
 
 	socket = new QSslSocket(this);
 	setSocketConnectState(true);
@@ -378,6 +381,10 @@ void MailSender::attach() {
 		return;
 	}
 
+	attachFile(fileName);
+}
+
+void MailSender::attachFile(const QString& fileName) {
 	if (QFileInfo(QFile(fileName)).size() > maxFileSize) {
 		showMessageBox("File is too long", QMessageBox::Warning);
 		return;
@@ -388,7 +395,8 @@ void MailSender::attach() {
 
 	if (!ui->attached->text().isEmpty()) {
 		ui->attached->setText(ui->attached->text() + "; " + QFileInfo(*file).fileName());
-	} else {
+	}
+	else {
 		ui->attached->setText(QFileInfo(*file).fileName());
 	}
 }
@@ -461,5 +469,20 @@ void MailSender::align() {
 	} else if (button == ui->alignJustify) {
 		ui->body->setAlignment(Qt::AlignJustify);
 		ui->alignJustify->setChecked(true);
+	}
+}
+
+void MailSender::dragEnterEvent(QDragEnterEvent* event)
+{
+	if (ui->attach->isEnabled()) {
+		event->acceptProposedAction();
+	}
+}
+
+void MailSender::dropEvent(QDropEvent* event)
+{
+	for (const QUrl& url : event->mimeData()->urls()) {
+		QString fileName = url.toLocalFile();
+		attachFile(fileName);
 	}
 }

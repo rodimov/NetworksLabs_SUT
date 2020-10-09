@@ -14,6 +14,12 @@ class MainWindow : public QMainWindow
 public:
 	MainWindow(QWidget* parent = nullptr);
 	~MainWindow();
+	void decryptFile(const QString& fileName);
+	void encodeFile(const QString& fileName);
+
+protected:
+	virtual void dragEnterEvent(QDragEnterEvent* event) override;
+	virtual void dropEvent(QDropEvent* event) override;
 
 private:
 	QString encodeBytes(QByteArray bytes);

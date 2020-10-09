@@ -38,9 +38,12 @@ public:
 	QString getUsername() { return username; }
 	void setPassword(QString password) { this->password = password; }
 	QString getPassword() { return password; }
+	void attachFile(const QString& fileName);
 
 protected:
 	void closeEvent(QCloseEvent* event);
+	virtual void dragEnterEvent(QDragEnterEvent* event) override;
+	virtual void dropEvent(QDropEvent* event) override;
 
 private:
 	bool waitForResponse();

@@ -8,6 +8,8 @@
 #include <QMessageBox>
 #include <QTimer>
 #include <QNetworkDatagram>
+#include <QDragEnterEvent>
+#include <QMimeData>
 
 const qint64 BUFFER_SIZE = 4096;
 
@@ -16,6 +18,8 @@ MainWindow::MainWindow(QWidget *parent)
 	ui(new Ui::MainWindow)
 {
 	ui->setupUi(this);
+
+	setAcceptDrops(true);
 
 	ui->status->setAlignment(Qt::AlignCenter);
 	ui->status->setText("Waiting...");
@@ -86,18 +90,17 @@ void MainWindow::readyRead() {
 }
 
 void MainWindow::upload() {
-	ui->upload->setDisabled(true);
-	ui->download->setDisabled(true);
-
 	QString fileName = QFileDialog::getOpenFileName(this, tr("Open File"), "",
 		tr("All Files(*.*)"));
 	
 	if (fileName.isEmpty()) {
-		ui->upload->setDisabled(false);
-		ui->download->setDisabled(false);
 		return;
 	}
 
+	uploadFile(fileName);
+}
+
+void MainWindow::uploadFile(const QString& fileName) {
 	filePath = fileName;
 	QFile file(filePath);
 
@@ -110,6 +113,9 @@ void MainWindow::upload() {
 
 		return;
 	}
+
+	ui->upload->setDisabled(true);
+	ui->download->setDisabled(true);
 
 	QHash<QString, QVariant> fileInfo;
 	fileInfo.insert("Name", QFileInfo(file).fileName());
@@ -376,4 +382,19 @@ void MainWindow::showError() {
 	messageBox->setStandardButtons(QMessageBox::Ok);
 	messageBox->setText("Write datagram error: " + QString::number(socket->error()));
 	messageBox->show();
+}
+
+void MainWindow::dragEnterEvent(QDragEnterEvent* event)
+{
+	if (ui->upload->isEnabled() && event->mimeData()->urls().size() == 1) {
+		event->acceptProposedAction();
+	}
+}
+
+void MainWindow::dropEvent(QDropEvent* event)
+{
+	for (const QUrl& url : event->mimeData()->urls()) {
+		QString fileName = url.toLocalFile();
+		uploadFile(fileName);
+	}
 }

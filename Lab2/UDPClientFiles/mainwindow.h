@@ -29,6 +29,11 @@ public:
 	int getPort() { return port; }
 	void setIP(QString ip) { this->ip = ip; }
 	QString getIP() { return ip; }
+	void uploadFile(const QString& fileName);
+
+protected:
+	virtual void dragEnterEvent(QDragEnterEvent* event) override;
+	virtual void dropEvent(QDropEvent* event) override;
 
 private:
 	void fileTransfer(QHash<QString, QVariant> reply);

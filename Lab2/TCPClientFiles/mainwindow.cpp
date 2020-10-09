@@ -7,6 +7,8 @@
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QTimer>
+#include <QDragEnterEvent>
+#include <QMimeData>
 
 const qint64 BUFFER_SIZE = 307704;
 
@@ -15,6 +17,8 @@ MainWindow::MainWindow(QWidget *parent)
 	ui(new Ui::MainWindow)
 {
 	ui->setupUi(this);
+
+	setAcceptDrops(true);
 
 	ui->status->setAlignment(Qt::AlignCenter);
 	ui->status->setText("Waiting...");
@@ -116,20 +120,19 @@ void MainWindow::readyRead() {
 }
 
 void MainWindow::upload() {
-	ui->upload->setDisabled(true);
-	ui->download->setDisabled(true);
-
 	QString fileName = QFileDialog::getOpenFileName(this, tr("Open File"), "",
 		tr("All Files(*.*)"));
 	
 	if (fileName.isEmpty()) {
-		ui->upload->setDisabled(false);
-		ui->download->setDisabled(false);
 		return;
 	}
 
+	uploadFile(fileName);
+}
+
+void MainWindow::uploadFile(const QString& fileName) {
 	file = new QFile(fileName);
-	
+
 	if (!file->open(QIODevice::ReadOnly)) {
 		QMessageBox messageBox;
 		messageBox.setText("Can't open file!!!");
@@ -137,8 +140,14 @@ void MainWindow::upload() {
 		messageBox.setIcon(QMessageBox::Warning);
 		messageBox.exec();
 
+		delete file;
+		file = nullptr;
+
 		return;
 	}
+
+	ui->upload->setDisabled(true);
+	ui->download->setDisabled(true);
 
 	QHash<QString, QVariant> fileInfo;
 	fileInfo.insert("Name", QFileInfo(*file).fileName());
@@ -271,4 +280,19 @@ void MainWindow::downloading(QByteArray& data) {
 	timer->start(1000);
 
 	QApplication::processEvents();
+}
+
+void MainWindow::dragEnterEvent(QDragEnterEvent* event)
+{
+	if (ui->upload->isEnabled() && event->mimeData()->urls().size() == 1) {
+		event->acceptProposedAction();
+	}
+}
+
+void MainWindow::dropEvent(QDropEvent* event)
+{
+	for(const QUrl& url : event->mimeData()->urls()) {
+		QString fileName = url.toLocalFile();
+		uploadFile(fileName);
+	}
 }

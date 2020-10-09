@@ -2,6 +2,8 @@
 #include "./ui_mainwindow.h"
 
 #include <QFileDialog>
+#include <QDragEnterEvent>
+#include <QMimeData>
 
 MainWindow::MainWindow(QWidget *parent)
 	: QMainWindow(parent),
@@ -9,10 +11,12 @@ MainWindow::MainWindow(QWidget *parent)
 {
 	ui->setupUi(this);
 
+	setAcceptDrops(true);
+
 	connect(ui->encode, &QPushButton::clicked, this, &MainWindow::encode);
-	connect(ui->encodeFile, &QPushButton::clicked, this, &MainWindow::encodeFile);
+	connect(ui->encodeFile, &QPushButton::clicked, this, QOverload<>::of(&MainWindow::encodeFile));
 	connect(ui->decrypt, &QPushButton::clicked, this, &MainWindow::decrypt);
-	connect(ui->decryptFile, &QPushButton::clicked, this, &MainWindow::decryptFile);
+	connect(ui->decryptFile, &QPushButton::clicked, this, QOverload<>::of(&MainWindow::decryptFile));
 }
 
 MainWindow::~MainWindow()
@@ -105,6 +109,10 @@ void MainWindow::encodeFile() {
 		return;
 	}
 
+	encodeFile(fileName);
+}
+
+void MainWindow::encodeFile(const QString& fileName) {
 	QFile file(fileName);
 
 	if (!file.open(QIODevice::ReadOnly)) {
@@ -136,6 +144,10 @@ void MainWindow::decryptFile() {
 		return;
 	}
 
+	decryptFile(fileName);
+}
+
+void MainWindow::decryptFile(const QString& fileName) {
 	QFile file(fileName);
 
 	if (!file.open(QIODevice::WriteOnly)) {
@@ -150,4 +162,19 @@ void MainWindow::decryptFile() {
 	file.close();
 
 	setWindowTitle(title);
+}
+
+void MainWindow::dragEnterEvent(QDragEnterEvent* event)
+{
+	if (event->mimeData()->urls().size() == 1) {
+		event->acceptProposedAction();
+	}
+}
+
+void MainWindow::dropEvent(QDropEvent* event)
+{
+	for (const QUrl& url : event->mimeData()->urls()) {
+		QString fileName = url.toLocalFile();
+		encodeFile(fileName);
+	}
 }
