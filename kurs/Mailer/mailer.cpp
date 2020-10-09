@@ -347,8 +347,16 @@ QString Mailer::getLongResponse() {
 	responseText = "";
 
 	while (!responseText.contains(".\r\n")) {
-		if (!waitForLineResponse())
-		{
+		int attempts = 5;
+		bool done = false;
+
+		while (attempts && !done) {
+			done = waitForLineResponse(false);
+			attempts--;
+		}
+
+		if (!done) {
+			showError(ResponseTimeoutError);
 			return "";
 		}
 
