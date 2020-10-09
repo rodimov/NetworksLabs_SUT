@@ -70,6 +70,12 @@ void MainWindow::connectToServer() {
 	setSocketConnectState(false);
 	socket->connectToHostEncrypted(ip, port);
 
+	if (!socket->waitForConnected()) {
+		showMessageBox("Connection error!", QMessageBox::Warning);
+		setSocketConnectState(true);
+		return;
+	}
+
 	login();
 	getMessagesIndexes();
 	getMessages();
@@ -208,9 +214,16 @@ void MainWindow::refresh() {
 
 	startPage = 0;
 	ui->previous->setEnabled(false);
-	sendMessage("QUIT", false);
-	waitForResponse(false);
-	socket->disconnect();
+
+	if (socket->isOpen()) {
+		sendMessage("QUIT", false);
+		waitForResponse(false);
+		socket->disconnect();
+
+		if (!socket->waitForDisconnected()) {
+			showMessageBox("Disconnection error!", QMessageBox::Warning);
+		}
+	}
 
 	connectToServer();
 
