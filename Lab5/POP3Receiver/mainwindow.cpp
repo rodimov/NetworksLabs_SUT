@@ -558,7 +558,7 @@ void MainWindow::encodeBase64List(QString& data) {
 		data = subjectBegin + QByteArray::fromBase64(base64.toLatin1()) + subjectEnding.simplified();
 	}
 
-	data.simplified();
+	data = data.simplified();
 }
 
 void MainWindow::saveAttachment() {
