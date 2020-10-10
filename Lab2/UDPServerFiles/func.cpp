@@ -1,8 +1,6 @@
-#pragma once
+#include "func.h"
 
 #include <QTextStream>
-
-#include "func.h"
 
 QTextStream& consoleOut() {
 	static QTextStream textStream(stdout);
