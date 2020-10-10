@@ -55,7 +55,7 @@ public:
 	QString getPassword() { return password; }
 
 protected:
-	void closeEvent(QCloseEvent* event);
+	virtual void closeEvent(QCloseEvent* event) override;
 
 private:
 	bool waitForResponse(bool isShowError = true);

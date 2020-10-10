@@ -41,7 +41,7 @@ public:
 	void attachFile(const QString& fileName);
 
 protected:
-	void closeEvent(QCloseEvent* event);
+	virtual void closeEvent(QCloseEvent* event) override;
 	virtual void dragEnterEvent(QDragEnterEvent* event) override;
 	virtual void dropEvent(QDropEvent* event) override;
 
