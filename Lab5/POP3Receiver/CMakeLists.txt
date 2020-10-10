@@ -12,8 +12,10 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
+if(WIN32)
+	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
+	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
+endif()
 
 find_package(Qt5 COMPONENTS Core Widgets Network WebEngineWidgets REQUIRED)
 
@@ -39,7 +41,7 @@ set(FILES "${FILES}" resource.qrc)
 INIT_GUI_EXECUTABLE(${PROJECT_NAME} "${FILES}")
 target_include_directories(${PROJECT_NAME} PRIVATE ${MIMETIC_LOCATION})
 
-if (WIN32)
+if(WIN32)
 	set(QT5_PLUGINS Qt5::Widgets Qt5::Core Qt5::Network Qt5::WebEngineWidgets ${MIMETIC_LOCATION}/win32/libmimetic_mt.lib)
 	set(QT5_PLUGINSD Qt5::Widgets Qt5::Core Qt5::Network Qt5::WebEngineWidgets ${MIMETIC_LOCATION}/win32/libmimetic_mtd.lib)
 elseif(UNIX)
