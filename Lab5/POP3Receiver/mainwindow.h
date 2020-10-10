@@ -119,7 +119,7 @@ public:
 	WebPage(QObject* parent = nullptr) : QWebEnginePage(parent) {}
 	~WebPage() {}
 
-	bool WebPage::acceptNavigationRequest(const QUrl& url, NavigationType type, bool isMainFrame)
+	bool acceptNavigationRequest(const QUrl& url, NavigationType type, bool isMainFrame)
 	{
 		if (type == QWebEnginePage::NavigationTypeLinkClicked)
 		{
