@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>477</width>
-    <height>200</height>
+    <width>530</width>
+    <height>210</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -19,7 +19,7 @@
   <property name="windowTitle">
    <string>Log in</string>
   </property>
-  <layout class="QGridLayout" name="gridLayout">
+  <layout class="QGridLayout" name="gridLayout" rowstretch="5,5,5,1">
    <item row="2" column="1">
     <layout class="QVBoxLayout" name="verticalLayout_4">
      <item>
