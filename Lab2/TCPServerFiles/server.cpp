@@ -122,7 +122,7 @@ void Server::readyRead() {
 	consoleOut() << "Size: " << file.size / 1024 / 1024 << "mb" << endl;
 }
 
-void Server::appendToFile(FileInfo& fileInfo, QByteArray& data) {
+void Server::appendToFile(FileInfo& fileInfo, const QByteArray& data) {
 	if (!QDir("server_files").exists()) {
 		QDir().mkdir("server_files");
 	}
@@ -159,7 +159,7 @@ void Server::sendFilesList(QTcpSocket* tcpSocket) {
 	consoleOut() << "Send files list" << endl;
 }
 
-void Server::sendFileInfo(QString& fileName, QTcpSocket* tcpSocket) {
+void Server::sendFileInfo(const QString& fileName, QTcpSocket* tcpSocket) {
 	QFile file("server_files/" + fileName);
 	QFileInfo fileInfo(file);
 

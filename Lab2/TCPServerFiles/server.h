@@ -24,9 +24,9 @@ private slots:
 	void connected();
 	void disconnected();
 	void readyRead();
-	void appendToFile(FileInfo& fileInfo, QByteArray& data);
+	void appendToFile(FileInfo& fileInfo, const QByteArray& data);
 	void sendFilesList(QTcpSocket* tcpSocket);
-	void sendFileInfo(QString& fileName, QTcpSocket* tcpSocket);
+	void sendFileInfo(const QString& fileName, QTcpSocket* tcpSocket);
 	void uploadFile(QTcpSocket* tcpSocket);
 
 private:

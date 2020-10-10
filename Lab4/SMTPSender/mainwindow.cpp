@@ -212,7 +212,7 @@ void MainWindow::login(bool isWebViewWasOpened) {
 	timer->start();
 }
 
-void MainWindow::openWebPage(QString& url) {
+void MainWindow::openWebPage(const QString& url) {
 	QDialog* webViewDialog = new QDialog(this);
 	webViewDialog->resize(800, 600);
 	QWebEngineView* webView = new QWebEngineView(webViewDialog);

@@ -37,8 +37,8 @@ private slots:
 	void readyRead();
 	void upload();
 	void download();
-	void downloadFiles(QStringList& filesList);
-	void downloading(QByteArray& data);
+	void downloadFiles(const QStringList& filesList);
+	void downloading(const QByteArray& data);
 
 private:
 	Ui::MainWindow* ui;

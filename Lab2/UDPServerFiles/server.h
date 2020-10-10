@@ -30,10 +30,10 @@ public:
 private slots:
 	void disconnected(ClientAddress* clientAddress);
 	void readyRead();
-	void appendToFile(FileInfo& fileInfo, QByteArray& data, ClientAddress* clientAddress);
+	void appendToFile(FileInfo& fileInfo, const QByteArray& data, ClientAddress* clientAddress);
 	void sendFilesList(ClientAddress* clientAddress);
-	void sendFileInfo(QString& fileName, ClientAddress* clientAddress);
-	void uploadFile(ClientAddress* clientAddress, QHash<QString, QVariant> reply);
+	void sendFileInfo(const QString& fileName, ClientAddress* clientAddress);
+	void uploadFile(ClientAddress* clientAddress, const QHash<QString, QVariant>& reply);
 	void resendData();
 
 private:

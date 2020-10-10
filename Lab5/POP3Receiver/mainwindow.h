@@ -71,7 +71,7 @@ private:
 	void showMessageBox(const QString& text, QMessageBox::Icon icon, bool isExec = false);
 	bool sendMessage(const QString& text, bool isShowError = true);
 	void login();
-	Message* parseMIME(QString& mime);
+	Message* parseMIME(const QString& mime);
 	void encodeBase64(QString& data);
 	void encodeBase64List(QString& data);
 	void setSocketConnectState(bool isConnected);

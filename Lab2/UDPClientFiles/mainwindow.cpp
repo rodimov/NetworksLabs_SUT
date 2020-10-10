@@ -137,7 +137,7 @@ void MainWindow::uploadFile(const QString& fileName) {
 	//replyTimer->start();
 }
 
-void MainWindow::fileTransfer(QHash<QString, QVariant> reply) {
+void MainWindow::fileTransfer(const QHash<QString, QVariant>& reply) {
 	QString fileName = reply[getFile].toString();
 	qint64 blockNumber = reply[blockAddr].toLongLong();
 	qint64 blocksTotal = reply[blockTotal].toLongLong();
@@ -201,7 +201,7 @@ void MainWindow::download() {
 	}
 }
 
-void MainWindow::downloadFiles(QStringList& filesList) {
+void MainWindow::downloadFiles(const QStringList& filesList) {
 	DownloadDialog downloadDialog;
 	downloadDialog.setFiles(filesList);
 
@@ -228,7 +228,7 @@ void MainWindow::downloadFiles(QStringList& filesList) {
 	}
 }
 
-void MainWindow::requestFirstPart(QHash<QString, QVariant> reply) {
+void MainWindow::requestFirstPart(const QHash<QString, QVariant>& reply) {
 	FileInfo downloadFileInfo;
 	downloadFileInfo.fileName = reply["Name"].toString();
 	downloadFileInfo.size = reply["Size"].toLongLong();
@@ -293,7 +293,7 @@ void MainWindow::requestFirstPart(QHash<QString, QVariant> reply) {
 	ui->upload->setDisabled(true);
 }
 
-void MainWindow::downloading(QHash<QString, QVariant> reply) {
+void MainWindow::downloading(const QHash<QString, QVariant>& reply) {
 	QString fileName = reply[getFileUpload].toString();
 	qint64 blockNumber = reply[blockAddr].toLongLong();
 	qint64 blocksNum = reply[blockTotal].toLongLong();

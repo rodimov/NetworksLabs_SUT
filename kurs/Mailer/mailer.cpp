@@ -183,7 +183,7 @@ bool Mailer::sendMessage(const QString& text, bool isShowError) {
 }
 
 void Mailer::login() {
-	sendMessage("USER " + username.left(username.indexOf("@")), false);
+	sendMessage("USER " + username, false);
 	waitForResponse();
 
 	if (!isResponseOk) {
@@ -379,7 +379,7 @@ QString Mailer::getLongResponse() {
 	return longResponse;
 }
 
-Message* Mailer::parseMIME(QString& mime) {
+Message* Mailer::parseMIME(const QString& mime) {
 	Message* message = new Message;
 	std::string stdData = mime.toStdString();
 	std::istringstream stringStream(stdData);

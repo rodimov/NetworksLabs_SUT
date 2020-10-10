@@ -215,7 +215,7 @@ void MainWindow::fileTransfer() {
 	ui->status->setText("Waiting...");
 }
 
-void MainWindow::downloadFiles(QStringList& filesList) {
+void MainWindow::downloadFiles(const QStringList& filesList) {
 	DownloadDialog downloadDialog;
 	downloadDialog.setFiles(filesList);
 
@@ -239,7 +239,7 @@ void MainWindow::downloadFiles(QStringList& filesList) {
 	isWaitingHash = true;
 }
 
-void MainWindow::downloading(QByteArray& data) {
+void MainWindow::downloading(const QByteArray& data) {
 	timer->stop();
 	double downloadMS = timerDownload.elapsed();
 

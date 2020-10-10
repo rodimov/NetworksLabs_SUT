@@ -378,7 +378,7 @@ QString MainWindow::getLongResponse() {
 	return longResponse;
 }
 
-Message* MainWindow::parseMIME(QString& mime) {
+Message* MainWindow::parseMIME(const QString& mime) {
 	Message* message = new Message;
 	std::string stdData = mime.toStdString();
 	std::istringstream stringStream(stdData);

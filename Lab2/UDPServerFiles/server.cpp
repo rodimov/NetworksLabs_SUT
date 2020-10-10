@@ -207,7 +207,7 @@ void Server::readyRead() {
 	consoleOut() << "Size: " << file.size / 1024 / 1024 << "mb" << endl;
 }
 
-void Server::appendToFile(FileInfo& fileInfo, QByteArray& data, ClientAddress* clientAddress) {
+void Server::appendToFile(FileInfo& fileInfo, const QByteArray& data, ClientAddress* clientAddress) {
 	QDataStream stream(data);
 	QHash<QString, QVariant> reply;
 	stream >> reply;
@@ -272,7 +272,7 @@ void Server::sendFilesList(ClientAddress* clientAddress) {
 	consoleOut() << "Send files list" << endl;
 }
 
-void Server::sendFileInfo(QString& fileName, ClientAddress* clientAddress) {
+void Server::sendFileInfo(const QString& fileName, ClientAddress* clientAddress) {
 	QFile file(serverDir + "/" + fileName);
 	QFileInfo fileInfo(file);
 
@@ -309,7 +309,7 @@ void Server::sendFileInfo(QString& fileName, ClientAddress* clientAddress) {
 	consoleOut() << "Send file info" << endl;
 }
 
-void Server::uploadFile(ClientAddress* clientAddress, QHash<QString, QVariant> reply) {
+void Server::uploadFile(ClientAddress* clientAddress, const QHash<QString, QVariant>& reply) {
 	if (!clientAddress) {
 		return;
 	}

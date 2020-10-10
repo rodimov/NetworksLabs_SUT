@@ -212,7 +212,7 @@ void MailSender::login(bool isWebViewWasOpened) {
 	timer->start();
 }
 
-void MailSender::openWebPage(QString& url) {
+void MailSender::openWebPage(const QString& url) {
 	QDialog* webViewDialog = new QDialog(this);
 	webViewDialog->resize(800, 600);
 	QWebEngineView* webView = new QWebEngineView(webViewDialog);

@@ -51,7 +51,7 @@ private:
 	void showMessageBox(const QString& text, QMessageBox::Icon icon, bool isExec = false);
 	bool sendMessage(const QString& text);
 	void login(bool isWebViewWasOpened = false);
-	void openWebPage(QString& url);
+	void openWebPage(const QString& url);
 	void setSocketConnectState(bool isConnected);
 	QString createMIME();
 	QString toBase64(const QString& text);

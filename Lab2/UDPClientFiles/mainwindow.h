@@ -36,18 +36,18 @@ protected:
 	virtual void dropEvent(QDropEvent* event) override;
 
 private:
-	void fileTransfer(QHash<QString, QVariant> reply);
+	void fileTransfer(const QHash<QString, QVariant>& reply);
 
 private slots:
 	void disconnected();
 	void readyRead();
 	void upload();
 	void download();
-	void downloadFiles(QStringList& filesList);
-	void downloading(QHash<QString, QVariant> reply);
+	void downloadFiles(const QStringList& filesList);
+	void downloading(const QHash<QString, QVariant>& reply);
 	void resendData();
 	void showError();
-	void requestFirstPart(QHash<QString, QVariant> reply);
+	void requestFirstPart(const QHash<QString, QVariant>& reply);
 
 private:
 	Ui::MainWindow* ui;
