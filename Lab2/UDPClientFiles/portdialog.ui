@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>357</width>
-    <height>90</height>
+    <width>360</width>
+    <height>99</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -30,7 +30,14 @@
       </widget>
      </item>
      <item>
-      <widget class="QLineEdit" name="ip"/>
+      <widget class="QLineEdit" name="ip">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+      </widget>
      </item>
     </layout>
    </item>
@@ -51,6 +58,12 @@
      </item>
      <item>
       <widget class="QSpinBox" name="port">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
        <property name="minimum">
         <number>1</number>
        </property>
