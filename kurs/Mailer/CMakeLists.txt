@@ -39,8 +39,13 @@ set(FILES "${FILES}" resource.qrc)
 INIT_GUI_EXECUTABLE(${PROJECT_NAME} "${FILES}")
 target_include_directories(${PROJECT_NAME} PRIVATE ${MIMETIC_LOCATION})
 
-set(QT5_PLUGINS Qt5::Widgets Qt5::Core Qt5::Network Qt5::WebEngineWidgets ${MIMETIC_LOCATION}/win32/libmimetic_mt.lib)
-set(QT5_PLUGINSD Qt5::Widgets Qt5::Core Qt5::Network Qt5::WebEngineWidgets ${MIMETIC_LOCATION}/win32/libmimetic_mtd.lib)
+if(WIN32)
+	set(QT5_PLUGINS Qt5::Widgets Qt5::Core Qt5::Network Qt5::WebEngineWidgets ${MIMETIC_LOCATION}/win32/libmimetic_mt.lib)
+	set(QT5_PLUGINSD Qt5::Widgets Qt5::Core Qt5::Network Qt5::WebEngineWidgets ${MIMETIC_LOCATION}/win32/libmimetic_mtd.lib)
+elseif(UNIX)
+	set(QT5_PLUGINS Qt5::Widgets Qt5::Core Qt5::Network Qt5::WebEngineWidgets ${MIMETIC_LOCATION}/bin/libmimetic.a)
+	set(QT5_PLUGINSD Qt5::Widgets Qt5::Core Qt5::Network Qt5::WebEngineWidgets ${MIMETIC_LOCATION}/bin/libmimetic.a)
+endif()
 
 target_link_libraries(${PROJECT_NAME} debug "${QT5_PLUGINSD}" optimized "${QT5_PLUGINS}")
 
